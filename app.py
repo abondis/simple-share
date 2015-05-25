@@ -1,12 +1,19 @@
 from bottle import run, request, abort, get, post
 from os import listdir, getcwd, makedirs
 from os.path import join as join_path, abspath, realpath, split as split_path
-from os.path import isdir, isfile, exists
+from os.path import isdir, isfile, exists, relpath, basename
+import string
+import random
 # from base64 import b64decode
 
-root_dir = getcwd()
+root_dir = join_path(getcwd(), 'files')
 files_path = 'files'
-permitted_path = join_path(root_dir, files_path)
+config_path = 'config'
+permitted_path = lambda user, postfix: join_path(root_dir, user, postfix)
+
+
+def random_generator(size=4, chars=string.ascii_letters + string.digits):
+    return ''.join(random.choice(chars) for x in range(size))
 
 
 def get_real_path(restrict=permitted_path, path=None):
@@ -66,7 +73,9 @@ def list_path(user, path='.'):
     """Return a list of files in a path if permitted
     """
     current_user = request.params.get('user')
-    permitted = join_path(permitted_path, user)
+    if current_user is None:
+        abort(403)
+    permitted = permitted_path(current_user, files_path)
     try:
         real_path = get_real_path(permitted, path)
     except IOError:
@@ -84,9 +93,11 @@ def list_path(user, path='.'):
 def create(user, path='.'):
     """Create a folder or a file"""
     current_user = request.params.get('user')
+    if current_user is None:
+        abort(403)
     file_type = request.params.get('type')
     overwrite = request.params.get('overwrite', False)
-    permitted = join_path(permitted_path, current_user)
+    permitted = permitted_path(current_user, files_path)
     uploads = request.files
 
     if user == current_user:
@@ -105,6 +116,86 @@ def create(user, path='.'):
                 print("create a directory")
                 makedirs(real_path)
         return {'status': 'ok'}
+    abort(403, {'status': 'ko'})
+
+
+def check_config_path(path):
+    """prepares config folder and check everything is fine"""
+    if exists(path):
+        if not isdir(path):
+            raise IOError("Configuration path is not accessible")
+    else:
+        makedirs(path)
+
+
+def create_random_folder(path):
+    count = 0
+    create = join_path(path, random_generator())
+    while isdir(create) and exists(create) and count < 10:
+        create = join_path(path, random_generator())
+        count += 1
+    check_config_path(create)
+    return create
+
+
+def configure(path, key, value=None, subdir=None):
+    """Configure things using folders and files
+    value == None: keep default or don't modify the file
+    """
+    if value is None:
+        return
+    if subdir is not None:
+        path = join_path(path, subdir)
+    check_config_path(path)
+    path = join_path(path, key)
+    with open(path, 'w') as f:
+        f.write(value)
+
+
+def get_files(path):
+    """Check if a path is shared and return the list of aliases"""
+    files = list_dir(path)
+    return files['files']
+
+
+@post('/share/<user>')
+@post('/share/<user>/<path:path>')
+def share(user, path="."):
+    """Share a file or a folder"""
+    current_user = request.params.get('user')
+    reuse = request.params.get('reuse')
+    public = request.params.get('public')
+    users = request.params.get('users')
+    if current_user is None:
+        abort(403)
+    permitted = permitted_path(current_user, files_path)
+    config = permitted_path(current_user, config_path)
+    if user == current_user:
+        try:
+            real_path = get_real_path(permitted, path)
+            shared_path = relpath(real_path, permitted)
+            config_shared_path = join_path(
+                config, shared_path)
+            check_config_path(config_shared_path)
+        except IOError:
+            abort(403)
+        if reuse is not None:
+            files = get_files(config_shared_path)
+            if reuse in files:
+                uid_path = join_path(config, reuse)
+            else:
+                abort(400, "This sharing ID is invalid")
+        else:
+            uid_path = create_random_folder(config)
+        configure(
+            config_shared_path,
+            basename(uid_path),
+            join_path(user, shared_path))
+        configure(uid_path, 'path', join_path(user, shared_path))
+        configure(uid_path, 'public', public)
+        configure(uid_path, 'users', users)
+        return {'status': 'ok'}
+
     abort(403, {'status': 'ko'})
 
 if __name__ == "__main__":
