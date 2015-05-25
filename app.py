@@ -44,6 +44,7 @@ def get_real_path(restrict=permitted_path, path=None):
     path = join_path(restrict, path)
     path = abspath(path)
     path = realpath(path)
+    print((path, restrict))
     if path.startswith(restrict):
         return path
     else:
@@ -65,6 +66,54 @@ def list_dir(path):
     elif isfile(path):
         return path
     return ls
+
+defaults = {
+    'public': True,
+    'users': None,
+    'expires': False
+    }
+
+
+def get_config(path, key, subdir=None):
+    """Get configuration from folder/path
+    """
+    if subdir is not None:
+        path = join_path(path, subdir)
+    path = join_path(path, key)
+    if not exists(path):
+        return defaults[key]
+    else:
+        with open(path, 'r') as f:
+            value = f.read()
+        return value
+
+
+def get_path_from_uid(user, uid):
+    config = permitted_path(user,
+                            join_path(config_path, uid))
+    if isdir(config):
+        return get_config(config, 'path')
+    return None
+
+
+@get('/shared/<user>/<uid>')
+@get('/shared/<user>/<uid>/<path:path>')
+def list_shared(user, uid, path='.'):
+    """Return a list of files in a shared folder"""
+    shared_path = get_path_from_uid(user, uid)
+    print(shared_path)
+    try:
+        permitted = join_path(root_dir, shared_path)
+        real_path = get_real_path(permitted, path)
+        print(real_path)
+    except IOError:
+        print('error')
+        abort(403, "The path is not available or doesn't exist")
+    try:
+        return list_dir(real_path)
+    except OSError:
+        abort(404)
+    abort(403, {'status': 'ko'})
 
 
 @get('/files/<user>')
