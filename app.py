@@ -1,7 +1,8 @@
 from bottle import run, request, abort, get, post
-from os import listdir, getcwd
+from os import listdir, getcwd, makedirs
 from os.path import join as join_path, abspath, realpath, split as split_path
 from os.path import isdir, isfile, exists
+# from base64 import b64decode
 
 root_dir = getcwd()
 files_path = 'files'
@@ -64,36 +65,47 @@ def list_dir(path):
 def list_path(user, path='.'):
     """Return a list of files in a path if permitted
     """
+    current_user = request.params.get('user')
     permitted = join_path(permitted_path, user)
     try:
         real_path = get_real_path(permitted, path)
     except IOError:
         abort(403)
-    if user == request.params.get('user'):
+    if user == current_user:
         try:
             return list_dir(real_path)
         except OSError:
             abort(404)
+    abort(403, {'status': 'ko'})
 
 
 @post('/files/<user>')
-@post('/files/<user><path:path>')
+@post('/files/<user>/<path:path>')
 def create(user, path='.'):
     """Create a folder or a file"""
-    permitted = join_path(permitted_path, user)
-    try:
-        real_path = get_real_path(permitted, path)
-    except IOError:
-        abort(403)
+    current_user = request.params.get('user')
     file_type = request.params.get('type')
-    if file_type == "file":
-        _path, _file = split_path(real_path)
-        if request.files:
-            print("we have a file")
-        else:
-            print("create empty file")
-    elif file_type == 'dir':
-        print("create a directory")
+    overwrite = request.params.get('overwrite', False)
+    permitted = join_path(permitted_path, current_user)
+    uploads = request.files
+
+    if user == current_user:
+        try:
+            real_path = get_real_path(permitted, path)
+        except IOError:
+            abort(403)
+        if file_type == "file":
+            _path, _file = split_path(real_path)
+            if request.files:
+                for f in uploads:
+                    uploads.get(f).save(
+                        real_path, overwrite=overwrite)
+        elif file_type == 'dir':
+            if not isdir(real_path) and not exists(real_path):
+                print("create a directory")
+                makedirs(real_path)
+        return {'status': 'ok'}
+    abort(403, {'status': 'ko'})
 
 if __name__ == "__main__":
     run(host='localhost', port=8080, debug=True, reloader=True)
