@@ -1,4 +1,4 @@
-from bottle import run, request, abort, get, post
+from bottle import run, request, abort, get, post, template, static_file
 from os import listdir, getcwd, makedirs
 from os.path import join as join_path, abspath, realpath, split as split_path
 from os.path import isdir, isfile, exists, relpath, basename
@@ -40,11 +40,9 @@ def get_real_path(restrict=permitted_path, path=None):
     ...
     IOError: /tmp doesn't exist
     """
-    # print((restrict, path))
     path = join_path(restrict, path)
     path = abspath(path)
     path = realpath(path)
-    print((path, restrict))
     if path.startswith(restrict):
         return path
     else:
@@ -96,18 +94,35 @@ def get_path_from_uid(user, uid):
     return None
 
 
+@get('/')
+def index():
+    return template('index')
+
+
+@get('/static/<path:path>')
+def static(path):
+    return static_file(path, root="./static")
+
+
+@get('/bower_components/<path:path>')
+def bower(path):
+    return static_file(path, root="./bower_components")
+
+
+@get('/partials/<template:path>')
+def partials(template):
+    return template(template)
+
+
 @get('/shared/<user>/<uid>')
 @get('/shared/<user>/<uid>/<path:path>')
 def list_shared(user, uid, path='.'):
     """Return a list of files in a shared folder"""
     shared_path = get_path_from_uid(user, uid)
-    print(shared_path)
     try:
         permitted = join_path(root_dir, shared_path)
         real_path = get_real_path(permitted, path)
-        print(real_path)
     except IOError:
-        print('error')
         abort(403, "The path is not available or doesn't exist")
     try:
         return list_dir(real_path)
@@ -129,6 +144,7 @@ def list_path(user, path='.'):
         real_path = get_real_path(permitted, path)
     except IOError:
         abort(403)
+    print(real_path)
     if user == current_user:
         try:
             return list_dir(real_path)
@@ -162,7 +178,6 @@ def create(user, path='.'):
                         real_path, overwrite=overwrite)
         elif file_type == 'dir':
             if not isdir(real_path) and not exists(real_path):
-                print("create a directory")
                 makedirs(real_path)
         return {'status': 'ok'}
     abort(403, {'status': 'ko'})

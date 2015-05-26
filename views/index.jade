@@ -1,0 +1,16 @@
+html(ng-app="simpleShare")
+  head
+    //- include angularjs
+    script(src='bower_components/angular/angular.js')
+    script(src='bower_components/angular-route/angular-route.js')
+    script(src='bower_components/angular-resource/angular-resource.js')
+    script(src='/static/js/app.js')
+    base(href="/")
+  body
+    ng-view
+      | Loading ...
+    script(type='text/ng-template', id='home.html')
+      a(href="#/files") Files
+    script(type='text/ng-template', id='files.html')
+      a(href="#/") Home
+      | [[files]]
