@@ -7,9 +7,15 @@
     <script src="/static/js/app.js"></script>
     <base href="/"/>
   </head>
-  <body>
+  <body ng-controller="MainController">
     <ng-view>Loading ...</ng-view>
-    <script type="text/ng-template" id="home.html"><a href="#/files">Files</a></script>
-    <script type="text/ng-template" id="files.html"><a href="#/">Home</a>[[files]]</script>
+    <script type="text/ng-template" id="home.html"><a href="/files">Files</a></script>
+    <script type="text/ng-template" id="files.html">
+      <base href="/files"/><a href="/">Home</a>[[files]]
+      [[$location.path()]]
+      <div><a ng-if="$location.path() != '/files'" href="[[$location.path()]]/..">..</a></div>
+      <div ng-repeat="dir in files.dirs"><a href="[[$location.path()]]/[[dir]]">[[dir]]</a></div>
+      <div ng-repeat="file in files.files"><a href="#">[[file]]</a></div>
+    </script>
   </body>
 </html>

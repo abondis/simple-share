@@ -14,7 +14,7 @@ angular.module('simpleShare', ['ngRoute', 'ngResource'])
                          templateUrl: 'home.html',
                          controller: 'HomeController',
                      });
-                 //$locationProvider.html5Mode(true);
+                 $locationProvider.html5Mode(true);
                  $interpolateProvider.startSymbol('[[');
                  $interpolateProvider.endSymbol(']]');
              }
@@ -22,6 +22,10 @@ angular.module('simpleShare', ['ngRoute', 'ngResource'])
     .factory('Files', ['$resource', function($resource) {
         return $resource('/files/:f_user/:path', {user: 'test'});
     }])
+    .controller('MainController', function($scope, $location) {
+        console.log('aha');
+        $scope.$location = $location;
+    })
     .controller('HomeController', function() {
         console.log('aha');
     })

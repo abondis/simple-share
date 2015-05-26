@@ -6,11 +6,19 @@ html(ng-app="simpleShare")
     script(src='bower_components/angular-resource/angular-resource.js')
     script(src='/static/js/app.js')
     base(href="/")
-  body
+  body(ng-controller="MainController")
     ng-view
       | Loading ...
     script(type='text/ng-template', id='home.html')
-      a(href="#/files") Files
+      a(href="/files") Files
     script(type='text/ng-template', id='files.html')
-      a(href="#/") Home
+      base(href="/files")
+      a(href="/") Home
       | [[files]]
+      | [[$location.path()]]
+      div
+        a(ng-if="$location.path() != '/files'", href="[[$location.path()]]/..") ..
+      div(ng-repeat="dir in files.dirs")
+        a(href="[[$location.path()]]/[[dir]]") [[dir]]
+      div(ng-repeat="file in files.files")
+        a(href="#") [[file]]
