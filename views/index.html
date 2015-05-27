@@ -7,24 +7,48 @@
     <script src="/bower_components/ng-file-upload/ng-file-upload-shim.js"></script>
     <script src="/bower_components/ng-file-upload/ng-file-upload-shim.js"></script>
     <script src="/bower_components/ng-file-upload/ng-file-upload.js"></script>
+    <link rel="stylesheet" href="/bower_components/pure/pure.css"/>
+    <link rel="stylesheet" href="/bower_components/pure/grids-responsive.css"/>
     <script src="/static/js/app.js"></script>
     <base href="/"/>
   </head>
   <body ng-controller="MainController">
-    <ng-view>Loading ...</ng-view>
-    <script type="text/ng-template" id="home.html"><a href="/files">Files</a></script>
-    <script type="text/ng-template" id="files.html"><a href="/">Home</a>[[files]]
-      <form ng-submit="create_folder()">
-        <input ng-model="new_folder"/>
-        <input type="submit"/>
-      </form>
-      <div ngf-select="ngf-select" ng-model="upload_files" ngf-multiple="true" class="button">Upload on file change</div>[[upload_files]]
-      <ul ng-show="upload_files.length &gt;0">
-        <li ng-repeat="u_file in upload_files">[[u_file.up_progress]] [[u_file.name]]</li>
-      </ul>
-      <div><a ng-if="$location.path() != '/files'" ng-href="[[get_path('..')]]">..</a></div>
-      <div ng-repeat="dir in files.dirs"><a ng-href="[[get_path(dir)]]">[[dir]]</a></div>
-      <div ng-repeat="file in files.files"><a href="#">[[file]]</a></div>
+    <div class="pure-g">
+      <div class="pure-u-md-1-6">
+        <ng-include src="'navbar.html'"></ng-include>
+      </div>
+      <div class="pure-u-md-5-6">
+        <ng-view>Loading ...</ng-view>
+      </div>
+    </div>
+    <script type="text/ng-template" id="navbar.html">
+      <nav class="pure-menu"><span class="pure-menu-heading">Simple Share</span>
+        <ul class="pure-menu-list">
+          <li style="height: inherit;" class="pure-menu-item"><a href="/files" ng-class="selected('/files')" class="pure-menu-link">Files</a></li>
+          <li style="height: inherit;" class="pure-menu-item"><a href="/" ng-class="selected('/')" class="pure-menu-link">Home</a></li>
+        </ul>
+      </nav>
+    </script>
+    <script type="text/ng-template" id="home.html"></script>
+    <script type="text/ng-template" id="files.html">
+      <div id="content">[[files]]
+        <div id="create-folders">
+          <input ng-model="new_folder"/>
+          <input type="submit" ng-click="create_folder()"/>
+        </div>
+        <div id="upload-files">
+          <div ngf-select="ngf-select" ng-model="upload_files" ngf-multiple="true" class="button">Upload on file change</div>[[upload_files]]
+          <ul ng-show="upload_files.length &gt;0">
+            <li ng-repeat="u_file in upload_files">[[u_file.up_progress]] [[u_file.name]] </li>
+          </ul>
+          <div id="files-list"></div>
+          <ul>
+            <li><a ng-if="$location.path() != '/files'" ng-href="[[get_path('..')]]">..</a></li>
+            <li ng-repeat="dir in files.dirs"><a ng-href="[[get_path(dir)]]">[[dir]]</a></li>
+            <li ng-repeat="file in files.files"><a href="#">[[file]]</a></li>
+          </ul>
+        </div>
+      </div>
     </script>
   </body>
 </html>

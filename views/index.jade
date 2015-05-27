@@ -7,34 +7,48 @@ html(ng-app="simpleShare")
     script(src="/bower_components/ng-file-upload/ng-file-upload-shim.js")
     //- script(src="/bower_components/es5-shim/es5-shim.min.js")
     //- script(src="/bower_components/es5-shim/es5-sham.min.js")
-    //- script(src="/bower_components/angular-file-upload/angular-file-upload.js")
     script(src="/bower_components/ng-file-upload/ng-file-upload-shim.js")
     script(src="/bower_components/ng-file-upload/ng-file-upload.js")
+    link(rel="stylesheet", href="/bower_components/pure/pure.css")
+    link(rel="stylesheet", href="/bower_components/pure/grids-responsive.css")
     script(src='/static/js/app.js')
     base(href="/")
   body(ng-controller="MainController")
-    ng-view
-      | Loading ...
+    div.pure-g
+      div.pure-u-md-1-6
+        ng-include(src="'navbar.html'")
+      div.pure-u-md-5-6
+        ng-view
+          | Loading ...
+    script(type='text/ng-template', id='navbar.html')
+      nav.pure-menu
+        span.pure-menu-heading Simple Share
+        ul.pure-menu-list
+          li.pure-menu-item(style="height: inherit;")
+            a.pure-menu-link(href="/files", ng-class="selected('/files')") Files
+          li.pure-menu-item(style="height: inherit;")
+            a.pure-menu-link(href="/", ng-class="selected('/')") Home
     script(type='text/ng-template', id='home.html')
-      a(href="/files") Files
     script(type='text/ng-template', id='files.html')
-      //- base(href="/files")
-      a(href="/") Home
-      | [[files]]
-      form(ng-submit="create_folder()")
-        input(ng-model='new_folder')
-        input(type='submit')
-      div(class="button",
-          ngf-select,
-          ng-model="upload_files",
-          ngf-multiple="true") Upload on file change
-      | [[upload_files]]
-      ul(ng-show="upload_files.length >0")
-        li(ng-repeat="u_file in upload_files") [[u_file.up_progress]] [[u_file.name]]
-      
-      div
-        a(ng-if="$location.path() != '/files'", ng-href="[[get_path('..')]]") ..
-      div(ng-repeat="dir in files.dirs")
-        a(ng-href="[[get_path(dir)]]") [[dir]]
-      div(ng-repeat="file in files.files")
-        a(href="#") [[file]]
+      div#content
+        //- base(href="/files")
+        | [[files]]
+        div#create-folders
+          input(ng-model='new_folder')
+          input(type='submit', ng-click="create_folder()")
+        div#upload-files
+          div(class="button",
+              ngf-select,
+              ng-model="upload_files",
+              ngf-multiple="true") Upload on file change
+          | [[upload_files]]
+          ul(ng-show="upload_files.length >0")
+            li(ng-repeat="u_file in upload_files") [[u_file.up_progress]] [[u_file.name]] 
+          div#files-list
+          ul
+            li
+              a(ng-if="$location.path() != '/files'", ng-href="[[get_path('..')]]") ..
+            li(ng-repeat="dir in files.dirs")
+              a(ng-href="[[get_path(dir)]]") [[dir]]
+            li(ng-repeat="file in files.files")
+              a(href="#") [[file]]

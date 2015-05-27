@@ -36,6 +36,15 @@ angular.module('simpleShare', ['ngRoute', 'ngResource', 'ngFileUpload'])
             return path.join('/');
             
         };
+        $scope.selected = function(url) {
+            var p = $location.path();
+            if (p === '/' && p === url) {
+                return 'pure-menu-selected';
+            }
+            if ( p.indexOf(url) === 0) {
+                return 'pure-menu-selected';
+            }
+        };
     })
     .controller('HomeController', function() {
         // console.log('aha');
