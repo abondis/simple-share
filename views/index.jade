@@ -1,9 +1,15 @@
 html(ng-app="simpleShare")
   head
     //- include angularjs
-    script(src='bower_components/angular/angular.js')
-    script(src='bower_components/angular-route/angular-route.js')
-    script(src='bower_components/angular-resource/angular-resource.js')
+    script(src='/bower_components/angular/angular.js')
+    script(src='/bower_components/angular-route/angular-route.js')
+    script(src='/bower_components/angular-resource/angular-resource.js')
+    script(src="/bower_components/ng-file-upload/ng-file-upload-shim.js")
+    //- script(src="/bower_components/es5-shim/es5-shim.min.js")
+    //- script(src="/bower_components/es5-shim/es5-sham.min.js")
+    //- script(src="/bower_components/angular-file-upload/angular-file-upload.js")
+    script(src="/bower_components/ng-file-upload/ng-file-upload-shim.js")
+    script(src="/bower_components/ng-file-upload/ng-file-upload.js")
     script(src='/static/js/app.js')
     base(href="/")
   body(ng-controller="MainController")
@@ -12,13 +18,23 @@ html(ng-app="simpleShare")
     script(type='text/ng-template', id='home.html')
       a(href="/files") Files
     script(type='text/ng-template', id='files.html')
-      base(href="/files")
+      //- base(href="/files")
       a(href="/") Home
       | [[files]]
-      | [[$location.path()]]
+      form(ng-submit="create_folder()")
+        input(ng-model='new_folder')
+        input(type='submit')
+      div(class="button",
+          ngf-select,
+          ng-model="upload_files",
+          ngf-multiple="true") Upload on file change
+      | [[upload_files]]
+      ul(ng-show="upload_files.length >0")
+        li(ng-repeat="u_file in upload_files") [[u_file.up_progress]] [[u_file.name]]
+      
       div
-        a(ng-if="$location.path() != '/files'", href="[[$location.path()]]/..") ..
+        a(ng-if="$location.path() != '/files'", ng-href="[[get_path('..')]]") ..
       div(ng-repeat="dir in files.dirs")
-        a(href="[[$location.path()]]/[[dir]]") [[dir]]
+        a(ng-href="[[get_path(dir)]]") [[dir]]
       div(ng-repeat="file in files.files")
         a(href="#") [[file]]

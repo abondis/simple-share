@@ -1,20 +1,29 @@
 
 <html ng-app="simpleShare">
   <head>
-    <script src="bower_components/angular/angular.js"></script>
-    <script src="bower_components/angular-route/angular-route.js"></script>
-    <script src="bower_components/angular-resource/angular-resource.js"></script>
+    <script src="/bower_components/angular/angular.js"></script>
+    <script src="/bower_components/angular-route/angular-route.js"></script>
+    <script src="/bower_components/angular-resource/angular-resource.js"></script>
+    <script src="/bower_components/ng-file-upload/ng-file-upload-shim.js"></script>
+    <script src="/bower_components/ng-file-upload/ng-file-upload-shim.js"></script>
+    <script src="/bower_components/ng-file-upload/ng-file-upload.js"></script>
     <script src="/static/js/app.js"></script>
     <base href="/"/>
   </head>
   <body ng-controller="MainController">
     <ng-view>Loading ...</ng-view>
     <script type="text/ng-template" id="home.html"><a href="/files">Files</a></script>
-    <script type="text/ng-template" id="files.html">
-      <base href="/files"/><a href="/">Home</a>[[files]]
-      [[$location.path()]]
-      <div><a ng-if="$location.path() != '/files'" href="[[$location.path()]]/..">..</a></div>
-      <div ng-repeat="dir in files.dirs"><a href="[[$location.path()]]/[[dir]]">[[dir]]</a></div>
+    <script type="text/ng-template" id="files.html"><a href="/">Home</a>[[files]]
+      <form ng-submit="create_folder()">
+        <input ng-model="new_folder"/>
+        <input type="submit"/>
+      </form>
+      <div ngf-select="ngf-select" ng-model="upload_files" ngf-multiple="true" class="button">Upload on file change</div>[[upload_files]]
+      <ul ng-show="upload_files.length &gt;0">
+        <li ng-repeat="u_file in upload_files">[[u_file.up_progress]] [[u_file.name]]</li>
+      </ul>
+      <div><a ng-if="$location.path() != '/files'" ng-href="[[get_path('..')]]">..</a></div>
+      <div ng-repeat="dir in files.dirs"><a ng-href="[[get_path(dir)]]">[[dir]]</a></div>
       <div ng-repeat="file in files.files"><a href="#">[[file]]</a></div>
     </script>
   </body>

@@ -95,7 +95,15 @@ def get_path_from_uid(user, uid):
 
 
 @get('/')
-def index():
+def index(path=None):
+    return template('index')
+
+
+@get('/files')
+@get('/files/<path:path>')
+@get('/shared')
+@get('/shared/<path:path>')
+def default(path=None):
     return template('index')
 
 
@@ -114,8 +122,8 @@ def partials(template):
     return template(template)
 
 
-@get('/shared/<user>/<uid>')
-@get('/shared/<user>/<uid>/<path:path>')
+@get('/api/shared/<user>/<uid>')
+@get('/api/shared/<user>/<uid>/<path:path>')
 def list_shared(user, uid, path='.'):
     """Return a list of files in a shared folder"""
     shared_path = get_path_from_uid(user, uid)
@@ -131,20 +139,20 @@ def list_shared(user, uid, path='.'):
     abort(403, {'status': 'ko'})
 
 
-@get('/files/<user>')
-@get('/files/<user>/<path:path>')
+@get('/api/files/<user>')
+@get('/api/files/<user>/<path:path>')
 def list_path(user, path='.'):
     """Return a list of files in a path if permitted
     """
     current_user = request.params.get('user')
     if current_user is None:
+        redirect('/')
         abort(403)
     permitted = permitted_path(current_user, files_path)
     try:
         real_path = get_real_path(permitted, path)
     except IOError:
         abort(403)
-    print(real_path)
     if user == current_user:
         try:
             return list_dir(real_path)
@@ -153,13 +161,13 @@ def list_path(user, path='.'):
     abort(403, {'status': 'ko'})
 
 
-@post('/files/<user>')
-@post('/files/<user>/<path:path>')
+@post('/api/files/<user>')
+@post('/api/files/<user>/<path:path>')
 def create(user, path='.'):
     """Create a folder or a file"""
     current_user = request.params.get('user')
     if current_user is None:
-        abort(403)
+        abort(403, "*"*180)
     file_type = request.params.get('type')
     overwrite = request.params.get('overwrite', False)
     permitted = permitted_path(current_user, files_path)
@@ -170,15 +178,13 @@ def create(user, path='.'):
             real_path = get_real_path(permitted, path)
         except IOError:
             abort(403)
+        check_config_path(real_path)
         if file_type == "file":
-            _path, _file = split_path(real_path)
-            if request.files:
-                for f in uploads:
-                    uploads.get(f).save(
-                        real_path, overwrite=overwrite)
+            for f in uploads:
+                uploads.get(f).save(
+                    real_path, overwrite=overwrite)
         elif file_type == 'dir':
-            if not isdir(real_path) and not exists(real_path):
-                makedirs(real_path)
+            pass
         return {'status': 'ok'}
     abort(403, {'status': 'ko'})
 
@@ -222,8 +228,8 @@ def get_files(path):
     return files['files']
 
 
-@post('/share/<user>')
-@post('/share/<user>/<path:path>')
+@post('/api/share/<user>')
+@post('/api/share/<user>/<path:path>')
 def share(user, path="."):
     """Share a file or a folder"""
     current_user = request.params.get('user')
@@ -261,6 +267,7 @@ def share(user, path="."):
         return {'status': 'ok'}
 
     abort(403, {'status': 'ko'})
+
 
 if __name__ == "__main__":
     run(host='localhost', port=8080, debug=True, reloader=True)
