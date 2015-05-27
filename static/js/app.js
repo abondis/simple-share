@@ -23,7 +23,7 @@ angular.module('simpleShare', ['ngRoute', 'ngResource', 'ngFileUpload'])
         return $resource('/api/files/:f_user/:path', {user: 'test'});
     }])
     .controller('MainController', function($scope, $location) {
-        console.log('aha');
+        // console.log('aha');
         $scope.$location = $location;
         $scope.get_path = function(url) {
             var path = $location.path();
@@ -38,7 +38,7 @@ angular.module('simpleShare', ['ngRoute', 'ngResource', 'ngFileUpload'])
         };
     })
     .controller('HomeController', function() {
-        console.log('aha');
+        // console.log('aha');
     })
     .controller('FilesController',
                 ['$scope', '$location', '$routeParams', 'Files', 'Upload',
@@ -65,7 +65,7 @@ angular.module('simpleShare', ['ngRoute', 'ngResource', 'ngFileUpload'])
                          var path = $scope.get_api_file_path($scope.new_folder);
                          var f = new Files(
                              );
-                         console.log(f);
+                         // console.log(f);
                          f.$save(
                              {
                                  f_user:'test',
@@ -73,12 +73,12 @@ angular.module('simpleShare', ['ngRoute', 'ngResource', 'ngFileUpload'])
                                  type: 'dir'
                              },
                              function() {
-                                 console.log('yeah');
+                                 // console.log('yeah');
                                  $scope.new_folder = '';
                                  $scope.get_files();
                              },
                              function() {
-                                 console.log('neh');
+                                 // console.log('neh');
                              });
                      };
                      $scope.upload_files = {};
@@ -90,7 +90,7 @@ angular.module('simpleShare', ['ngRoute', 'ngResource', 'ngFileUpload'])
                              var i, file, path;
                              path = $scope.get_api_file_path();
                              (path != "") ? path = '/' + path : true;
-                             console.log(path);
+                             // console.log(path);
                              for (i = 0; i < files.length; i++) {
 	                         (function(file) {
                                      $scope.singleUpload(file, path);
@@ -110,10 +110,11 @@ angular.module('simpleShare', ['ngRoute', 'ngResource', 'ngFileUpload'])
                          });
                          file.upload.progress(function (evt) {
                              file.up_progress = parseInt(100.0 * evt.loaded / evt.total);
-                             console.log('progress: ' + file.up_progress + '% ' + evt.config.file.name);
+                             // console.log('progress: ' + file.up_progress + '% ' + evt.config.file.name);
                          });
                          file.upload.success(function (data, status, headers, config) {
-                             console.log('file ' + config.file.name + 'uploaded. Response: ' + data);
+                             $scope.get_files();
+                             // console.log('file ' + config.file.name + 'uploaded. Response: ' + data);
                          });
                      };
                  }]);
