@@ -11,6 +11,8 @@ html(ng-app="simpleShare")
     script(src="/bower_components/ng-file-upload/ng-file-upload.js")
     link(rel="stylesheet", href="/bower_components/pure/pure.css")
     link(rel="stylesheet", href="/bower_components/pure/grids-responsive.css")
+    link(rel="stylesheet", href="/bower_components/font-awesome/css/font-awesome.css")
+
     script(src='/static/js/app.js')
     base(href="/")
   body(ng-controller="MainController")
@@ -44,11 +46,21 @@ html(ng-app="simpleShare")
           | [[upload_files]]
           ul(ng-show="upload_files.length >0")
             li(ng-repeat="u_file in upload_files") [[u_file.up_progress]] [[u_file.name]] 
-          div#files-list
-          ul
+        div#files-list
+          ul(style="list-style: none;")
             li
-              a(ng-if="$location.path() != '/files'", ng-href="[[get_path('..')]]") ..
-            li(ng-repeat="dir in files.dirs")
-              a(ng-href="[[get_path(dir)]]") [[dir]]
-            li(ng-repeat="file in files.files")
-              a(href="#") [[file]]
+              a(ng-if="$location.path() != '/files'", ng-href="[[get_path('..')]]")
+                i.fa.fa-folder-o
+                | ..
+            li(ng-repeat="dir in files.dirs track by $index")
+              a(ng-href="[[get_path(dir)]]")
+                i.fa.fa-folder-o
+                | [[dir]]
+              a(href="", ng-click="delete_path(dir)")
+                i.fa.fa-trash-o
+            li(ng-repeat="file in files.files track by $index")
+              a(href="#")
+                i.fa.fa-file-o
+                | [[file]]
+              a(href="", ng-click="delete_path(file)")
+                i.fa.fa-trash-o

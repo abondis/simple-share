@@ -60,6 +60,17 @@ angular.module('simpleShare', ['ngRoute', 'ngResource', 'ngFileUpload'])
                                  path:$routeParams.path }
                          );
                      };
+                     $scope.delete_path = function(path) {
+                         var p = $scope.get_api_file_path(path);
+                         Files.delete(
+                             {
+                                 f_user:'test',
+                                 path:p },
+                             function(data) {
+                                 $scope.files = data;
+                             }
+                         );
+                     };
                      $scope.get_api_file_path = function(folder) {
                          var path = $location.path();
                          path = path.split('/');

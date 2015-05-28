@@ -9,6 +9,7 @@
     <script src="/bower_components/ng-file-upload/ng-file-upload.js"></script>
     <link rel="stylesheet" href="/bower_components/pure/pure.css"/>
     <link rel="stylesheet" href="/bower_components/pure/grids-responsive.css"/>
+    <link rel="stylesheet" href="/bower_components/font-awesome/css/font-awesome.css"/>
     <script src="/static/js/app.js"></script>
     <base href="/"/>
   </head>
@@ -41,11 +42,12 @@
           <ul ng-show="upload_files.length &gt;0">
             <li ng-repeat="u_file in upload_files">[[u_file.up_progress]] [[u_file.name]] </li>
           </ul>
-          <div id="files-list"></div>
-          <ul>
-            <li><a ng-if="$location.path() != '/files'" ng-href="[[get_path('..')]]">..</a></li>
-            <li ng-repeat="dir in files.dirs"><a ng-href="[[get_path(dir)]]">[[dir]]</a></li>
-            <li ng-repeat="file in files.files"><a href="#">[[file]]</a></li>
+        </div>
+        <div id="files-list">
+          <ul style="list-style: none;">
+            <li><a ng-if="$location.path() != '/files'" ng-href="[[get_path('..')]]"><i class="fa fa-folder-o"></i>..</a></li>
+            <li ng-repeat="dir in files.dirs track by $index"><a ng-href="[[get_path(dir)]]"><i class="fa fa-folder-o"></i>[[dir]]</a><a href="" ng-click="delete_path(dir)"><i class="fa fa-trash-o"></i></a></li>
+            <li ng-repeat="file in files.files track by $index"><a href="#"><i class="fa fa-file-o"></i>[[file]]</a><a href="" ng-click="delete_path(file)"><i class="fa fa-trash-o"></i></a></li>
           </ul>
         </div>
       </div>

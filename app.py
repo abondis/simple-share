@@ -1,11 +1,14 @@
-from bottle import run, request, abort, get, post, template, static_file
-from os import listdir, getcwd, makedirs
-from os.path import join as join_path, abspath, realpath, split as split_path
+from bottle import get, post, delete
+from bottle import run, request
+from bottle import redirect, abort, template, static_file
+from os import listdir, getcwd, makedirs, remove
+from shutil import rmtree
+from os.path import join as join_path, abspath, realpath
 from os.path import isdir, isfile, exists, relpath, basename
 import string
 import random
 # from base64 import b64decode
-
+DEBUG = True
 root_dir = join_path(getcwd(), 'files')
 files_path = 'files'
 config_path = 'config'
@@ -161,6 +164,50 @@ def list_path(user, path='.'):
     abort(403, {'status': 'ko'})
 
 
+@delete('/api/files/<user>/<path:path>')
+def delete_path(user, path='.'):
+    """Return a list of files in a path if permitted
+    """
+    current_user = request.params.get('user')
+    if current_user is None:
+        redirect('/')
+        abort(403)
+    permitted = permitted_path(current_user, files_path)
+    try:
+        real_path = get_real_path(permitted, path)
+    except IOError:
+        abort(403)
+    if user == current_user:
+        try:
+            if exists(real_path):
+                if isfile(real_path):
+                    if DEBUG:
+                        print("deleting file {}".format(real_path))
+                    else:
+                        remove(real_path)
+                elif isdir(real_path):
+                    if DEBUG:
+                        print("deleting folder {}".format(real_path))
+                    else:
+                        rmtree(real_path)
+            try:
+                permitted = abspath(realpath(join_path(real_path, '..')))
+                assert real_path.startswith(permitted)
+            except:
+                abort(403)
+            ls = list_dir(permitted)
+            if DEBUG:
+                ls = {
+                    'dirs':
+                    ['deleted', 'something'],
+                    'files':
+                    ['maybe it was', path]}
+            return ls
+        except OSError:
+            abort(404)
+    abort(403, {'status': 'ko'})
+
+
 @post('/api/files/<user>')
 @post('/api/files/<user>/<path:path>')
 def create(user, path='.'):
@@ -270,4 +317,4 @@ def share(user, path="."):
 
 
 if __name__ == "__main__":
-    run(host='localhost', port=8080, debug=True, reloader=True)
+    run(host='localhost', port=8080, debug=DEBUG, reloader=True)
