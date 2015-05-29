@@ -20,7 +20,7 @@ angular.module('simpleShare', ['ngRoute', 'ngResource', 'ngFileUpload'])
              }
             ])
     .factory('Files', ['$resource', function($resource) {
-        return $resource('/api/files/:f_user/:path', {user: 'test'});
+        return $resource('/api/files/:path');
     }])
     .controller('MainController', function($scope, $location) {
         // console.log('aha');
@@ -56,7 +56,6 @@ angular.module('simpleShare', ['ngRoute', 'ngResource', 'ngFileUpload'])
                      $scope.get_files = function() {
                          $scope.files = Files.get(
                              {
-                                 f_user:'test',
                                  path:$routeParams.path }
                          );
                      };
@@ -64,7 +63,6 @@ angular.module('simpleShare', ['ngRoute', 'ngResource', 'ngFileUpload'])
                          var p = $scope.get_api_file_path(path);
                          Files.delete(
                              {
-                                 f_user:'test',
                                  path:p },
                              function(data) {
                                  $scope.files = data;
@@ -88,7 +86,6 @@ angular.module('simpleShare', ['ngRoute', 'ngResource', 'ngFileUpload'])
                          // console.log(f);
                          f.$save(
                              {
-                                 f_user:'test',
                                  path: path,
                                  type: 'dir'
                              },
@@ -120,9 +117,8 @@ angular.module('simpleShare', ['ngRoute', 'ngResource', 'ngFileUpload'])
                      };
                      $scope.singleUpload = function(file, path) {
                          file.upload = Upload.upload({
-                             url: '/api/files/test' + path,
+                             url: '/api/files' + path,
                              fields: {
-                                 'user': 'test',
                                  'type': 'file',
                                  'overwrite': true
                              },

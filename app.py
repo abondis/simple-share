@@ -1,72 +1,22 @@
 from bottle import get, post, delete
-from bottle import run, request
-from bottle import redirect, abort, template, static_file
-from os import listdir, getcwd, makedirs, remove
-from shutil import rmtree
+from bottle import app, request, run
+from bottle import abort, template, static_file
 from os.path import join as join_path, abspath, realpath
-from os.path import isdir, isfile, exists, relpath, basename
-import string
-import random
-# from base64 import b64decode
+from os.path import relpath, basename
+from simpleshare.tools import get_real_path
+from simpleshare.tools import list_dir, get_path_from_uid
+from simpleshare.tools import delete_path, get_files
+from simpleshare.tools import check_config_path, create_random_folder
+from simpleshare.tools import configure, root_dir
+from simpleshare.tools import permitted_files_path, protect_path
+from simpleshare.tools import permitted_config_path
+from cork import Cork
+
+aaa = Cork('cork_conf')
+authorize = aaa.make_auth_decorator(fail_redirect="/login", role="user")
+
 DEBUG = True
-root_dir = join_path(getcwd(), 'files')
-files_path = 'files'
-config_path = 'config'
-permitted_path = lambda user, postfix: join_path(root_dir, user, postfix)
 
-
-def random_generator(size=4, chars=string.ascii_letters + string.digits):
-    return ''.join(random.choice(chars) for x in range(size))
-
-
-def get_real_path(restrict=permitted_path, path=None):
-    """Normalize a path and returns one relative to the permitted
-    `files_path`
-
-    Asking for 'tmp' should give us a path in our permitted folder
-    >>> get_real_path('/my/folder', 'tmp')
-    '/my/folder/tmp'
-
-    As should asking for 'blah/../tmp' should work
-    >>> get_real_path('/my/folder', 'blah/../tmp')
-    '/my/folder/tmp'
-
-    Asking for '/tmp' should fail
-    >>> get_real_path('/my/folder', '/tmp')
-    Traceback (most recent call last):
-    ...
-    IOError: /tmp doesn't exist
-
-    Same if we ask for '../../../../tmp'
-    >>> get_real_path('/my/folder', '/tmp')
-    Traceback (most recent call last):
-    ...
-    IOError: /tmp doesn't exist
-    """
-    path = join_path(restrict, path)
-    path = abspath(path)
-    path = realpath(path)
-    if path.startswith(restrict):
-        return path
-    else:
-        raise IOError("{} doesn't exist".format(path))
-
-
-def list_dir(path):
-    """Return folder content or filename
-    """
-    ls = {'dirs': [], 'files': []}
-    if isdir(path) and exists(path):
-        _ls = listdir(path)
-        for p in _ls:
-            ls_path = join_path(path, p)
-            if isdir(ls_path):
-                ls['dirs'].append(p)
-            elif isfile(ls_path):
-                ls['files'].append(p)
-    elif isfile(path):
-        return path
-    return ls
 
 defaults = {
     'public': True,
@@ -75,37 +25,38 @@ defaults = {
     }
 
 
-def get_config(path, key, subdir=None):
-    """Get configuration from folder/path
-    """
-    if subdir is not None:
-        path = join_path(path, subdir)
-    path = join_path(path, key)
-    if not exists(path):
-        return defaults[key]
-    else:
-        with open(path, 'r') as f:
-            value = f.read()
-        return value
-
-
-def get_path_from_uid(user, uid):
-    config = permitted_path(user,
-                            join_path(config_path, uid))
-    if isdir(config):
-        return get_config(config, 'path')
-    return None
+def post_get(name, default=''):
+    return request.POST.get(name, default).strip()
 
 
 @get('/')
+@authorize()
 def index(path=None):
     return template('index')
+
+
+@get('/login')
+def login_page():
+    return template('login')
+
+
+@post('/login')
+def login():
+    username = post_get('user')
+    password = post_get('password')
+    aaa.login(username, password, success_redirect='/')
+
+
+@get('/logout')
+def logout():
+    aaa.logout(success_redirect='/login')
 
 
 @get('/files')
 @get('/files/<path:path>')
 @get('/shared')
 @get('/shared/<path:path>')
+@authorize()
 def default(path=None):
     return template('index')
 
@@ -121,6 +72,7 @@ def bower(path):
 
 
 @get('/partials/<template:path>')
+@authorize()
 def partials(template):
     return template(template)
 
@@ -129,9 +81,9 @@ def partials(template):
 @get('/api/shared/<user>/<uid>/<path:path>')
 def list_shared(user, uid, path='.'):
     """Return a list of files in a shared folder"""
-    shared_path = get_path_from_uid(user, uid)
+    real_shared_path = get_path_from_uid(user, uid)
     try:
-        permitted = join_path(root_dir, shared_path)
+        permitted = join_path(root_dir, real_shared_path)
         real_path = get_real_path(permitted, path)
     except IOError:
         abort(403, "The path is not available or doesn't exist")
@@ -142,179 +94,116 @@ def list_shared(user, uid, path='.'):
     abort(403, {'status': 'ko'})
 
 
-@get('/api/files/<user>')
-@get('/api/files/<user>/<path:path>')
-def list_path(user, path='.'):
+@get('/api/files')
+@get('/api/files/<path:path>')
+@authorize()
+def list_path(path='.'):
     """Return a list of files in a path if permitted
     """
-    current_user = request.params.get('user')
-    if current_user is None:
-        redirect('/')
-        abort(403)
-    permitted = permitted_path(current_user, files_path)
+    real_path = protect_path(path)
     try:
-        real_path = get_real_path(permitted, path)
-    except IOError:
-        abort(403)
-    if user == current_user:
-        try:
-            return list_dir(real_path)
-        except OSError:
-            abort(404)
-    abort(403, {'status': 'ko'})
+        return list_dir(real_path)
+    except OSError:
+        abort(404)
 
 
-@delete('/api/files/<user>/<path:path>')
-def delete_path(user, path='.'):
+@delete('/api/files/<path:path>')
+@authorize()
+def api_delete_path(path='.'):
     """Return a list of files in a path if permitted
     """
-    current_user = request.params.get('user')
-    if current_user is None:
-        redirect('/')
-        abort(403)
-    permitted = permitted_path(current_user, files_path)
+    real_path = protect_path(path)
     try:
-        real_path = get_real_path(permitted, path)
-    except IOError:
-        abort(403)
-    if user == current_user:
+        delete_path(real_path)
         try:
-            if exists(real_path):
-                if isfile(real_path):
-                    if DEBUG:
-                        print("deleting file {}".format(real_path))
-                    else:
-                        remove(real_path)
-                elif isdir(real_path):
-                    if DEBUG:
-                        print("deleting folder {}".format(real_path))
-                    else:
-                        rmtree(real_path)
-            try:
-                permitted = abspath(realpath(join_path(real_path, '..')))
-                assert real_path.startswith(permitted)
-            except:
-                abort(403)
-            ls = list_dir(permitted)
-            if DEBUG:
-                ls = {
-                    'dirs':
-                    ['deleted', 'something'],
-                    'files':
-                    ['maybe it was', path]}
-            return ls
-        except OSError:
-            abort(404)
-    abort(403, {'status': 'ko'})
+            # after deleting we want to re-list what the current folder hosts
+            # append /..
+            # follow symlink ???
+            # get absolutepath
+            permitted = abspath(realpath(join_path(real_path, '..')))
+            assert real_path.startswith(permitted)
+        except:
+            abort(403)
+        ls = list_dir(permitted)
+        if DEBUG:
+            ls = {
+                'dirs':
+                ['deleted', 'something'],
+                'files':
+                ['maybe it was', path]}
+        return ls
+    except OSError:
+        abort(404)
 
 
-@post('/api/files/<user>')
-@post('/api/files/<user>/<path:path>')
-def create(user, path='.'):
+@post('/api/files')
+@post('/api/files/<path:path>')
+@authorize()
+def create(path='.'):
     """Create a folder or a file"""
-    current_user = request.params.get('user')
-    if current_user is None:
-        abort(403, "*"*180)
-    file_type = request.params.get('type')
-    overwrite = request.params.get('overwrite', False)
-    permitted = permitted_path(current_user, files_path)
+    real_path = protect_path(path)
+    file_type = post_get('type')
+    overwrite = request.POST.get('overwrite', False)
     uploads = request.files
 
-    if user == current_user:
-        try:
-            real_path = get_real_path(permitted, path)
-        except IOError:
-            abort(403)
-        check_config_path(real_path)
-        if file_type == "file":
-            for f in uploads:
-                uploads.get(f).save(
-                    real_path, overwrite=overwrite)
-        elif file_type == 'dir':
-            pass
-        return {'status': 'ok'}
-    abort(403, {'status': 'ko'})
+    check_config_path(real_path)
+    if file_type == "file":
+        for f in uploads:
+            uploads.get(f).save(
+                real_path, overwrite=overwrite)
+    elif file_type == 'dir':
+        pass
+    return {'status': 'ok'}
 
 
-def check_config_path(path):
-    """prepares config folder and check everything is fine"""
-    if exists(path):
-        if not isdir(path):
-            raise IOError("Configuration path is not accessible")
-    else:
-        makedirs(path)
-
-
-def create_random_folder(path):
-    count = 0
-    create = join_path(path, random_generator())
-    while isdir(create) and exists(create) and count < 10:
-        create = join_path(path, random_generator())
-        count += 1
-    check_config_path(create)
-    return create
-
-
-def configure(path, key, value=None, subdir=None):
-    """Configure things using folders and files
-    value == None: keep default or don't modify the file
-    """
-    if value is None:
-        return
-    if subdir is not None:
-        path = join_path(path, subdir)
-    check_config_path(path)
-    path = join_path(path, key)
-    with open(path, 'w') as f:
-        f.write(value)
-
-
-def get_files(path):
-    """Check if a path is shared and return the list of aliases"""
-    files = list_dir(path)
-    return files['files']
-
-
-@post('/api/share/<user>')
-@post('/api/share/<user>/<path:path>')
-def share(user, path="."):
+@post('/api/share')
+@post('/api/share/<path:path>')
+@authorize()
+def share(path="."):
     """Share a file or a folder"""
-    current_user = request.params.get('user')
-    reuse = request.params.get('reuse')
-    public = request.params.get('public')
-    users = request.params.get('users')
-    if current_user is None:
+    reuse = post_get('reuse')
+    public = post_get('public')
+    users = post_get('users')
+    config = permitted_config_path()
+    # /.../user/files/....
+    real_path = protect_path(path)
+    try:
+        # /.../user/files
+        # get relative path, to use in configuration path
+        rel_shared_path = relpath(real_path, permitted_files_path())
+        config_shared_path = join_path(
+            config, rel_shared_path)
+        check_config_path(config_shared_path)
+    except IOError:
         abort(403)
-    permitted = permitted_path(current_user, files_path)
-    config = permitted_path(current_user, config_path)
-    if user == current_user:
-        try:
-            real_path = get_real_path(permitted, path)
-            shared_path = relpath(real_path, permitted)
-            config_shared_path = join_path(
-                config, shared_path)
-            check_config_path(config_shared_path)
-        except IOError:
-            abort(403)
-        if reuse is not None:
-            files = get_files(config_shared_path)
-            if reuse in files:
-                uid_path = join_path(config, reuse)
-            else:
-                abort(400, "This sharing ID is invalid")
+    if reuse is not None:
+        files = get_files(config_shared_path)
+        if reuse in files:
+            uid_path = join_path(config, reuse)
         else:
-            uid_path = create_random_folder(config)
-        configure(
-            config_shared_path,
-            basename(uid_path),
-            join_path(user, shared_path))
-        configure(uid_path, 'path', join_path(user, shared_path))
-        configure(uid_path, 'public', public)
-        configure(uid_path, 'users', users)
-        return {'status': 'ok'}
-
-    abort(403, {'status': 'ko'})
+            abort(400, "This sharing ID is invalid")
+    else:
+        uid_path = create_random_folder(config)
+    configure(
+        config_shared_path,
+        basename(uid_path),
+        real_path)
+    configure(uid_path, 'path', real_path)
+    configure(uid_path, 'public', public)
+    configure(uid_path, 'users', users)
+    return {'status': 'ok'}
 
 
 if __name__ == "__main__":
-    run(host='localhost', port=8080, debug=DEBUG, reloader=True)
+    from beaker.middleware import SessionMiddleware
+
+    session_opts = {
+        'session.type': 'file',
+        'session.cookie_expires': 3600,
+        'session.encrypt_key': 'peesh6ke7azuathai4seiyoh7ohFohph ',
+        'session.data_dir': './beaker/sessions',
+        'session.auto': True,
+        'session.validate_key': True,
+    }
+    web_app = SessionMiddleware(app(), session_opts)
+    run(app=web_app, host='localhost', port=8080, debug=DEBUG, reloader=True)
