@@ -17,7 +17,7 @@ html(ng-app="simpleShare")
     base(href="/")
   body(ng-controller="MainController")
     div.pure-g
-      div.pure-u-md-1-6
+      div.pure-u-md-1-6(ng-show="api != 'shared'")
         ng-include(src="'navbar.html'")
       div.pure-u-md-5-6
         ng-view
@@ -47,24 +47,45 @@ html(ng-app="simpleShare")
           ul(ng-show="upload_files.length >0")
             li(ng-repeat="u_file in upload_files") [[u_file.up_progress]] [[u_file.name]] 
         div#files-list
-          ul(style="list-style: none;")
-            li
-              a(ng-if="$location.path() != '/files'", ng-href="[[get_path('..')]]")
-                i.fa.fa-folder-o
-                | ..
-            li(ng-repeat="dir in files.dirs track by $index")
-              a(ng-href="[[get_path(dir)]]")
-                i.fa.fa-folder-o
-                | [[dir]]
-              a(href="", ng-click="delete_path(dir)")
-                i.fa.fa-trash-o
-              a(href="", ng-click="share_path(dir)")
-                i.fa.fa-share-alt
-            li(ng-repeat="file in files.files track by $index")
-              a(href="#")
-                i.fa.fa-file-o
-                | [[file]]
-              a(href="", ng-click="delete_path(file)")
-                i.fa.fa-trash-o
-              a(href="", ng-click="share_path(file)")
-                i.fa.fa-share-alt
+          table.pure-table.pure-table-horizontal
+            thead
+              tr
+                td(ng-click="select_all();", ng-class="['fa', 'fa-square-o']")
+                th(ng-click="toggle_sort_by('name');") name
+                th(ng-click="toggle_sort_by('size');") size
+                th(ng-click="toggle_sort_by('date');") modified
+            tbody
+              tr(ng-show="$location.path() != '/files'")
+                td
+                td
+                  a(ng-href="[[get_path('..')]]")
+                    i.fa.fa-folder-o
+                    | ..
+                td
+                td
+              tr(ng-repeat="dir in files.dirs track by $index")
+                td(ng-click="select($index);", ng-class="['fa', 'fa-square-o']")
+                td
+                  a(ng-href="[[get_path(dir)]]")
+                    i.fa.fa-folder-o
+                    | [[dir]]
+                  a(ng-if="api == 'files'", href="", ng-click="delete_path(dir)")
+                    i.fa.fa-trash-o
+                  a(ng-if="api == 'files'", href="", ng-click="share_path(dir)")
+                    i.fa.fa-share-alt
+                    | [[shared[dir]; ]]
+                td X kB
+                td someday
+              tr(ng-repeat="file in files.files track by $index")
+                td(ng-click="select($index);", ng-class="['fa', 'fa-square-o']")
+                td
+                  a(href="#")
+                    i.fa.fa-file-o
+                    | [[file]]
+                  a(ng-if="api == 'files'", href="", ng-click="delete_path(file)")
+                    i.fa.fa-trash-o
+                  a(ng-if="api == 'files'", href="", ng-click="share_path(file)")
+                    i.fa.fa-share-alt
+                    | [[shared[file]; ]]
+                td X kB
+                td someday

@@ -15,7 +15,7 @@
   </head>
   <body ng-controller="MainController">
     <div class="pure-g">
-      <div class="pure-u-md-1-6">
+      <div ng-show="api != 'shared'" class="pure-u-md-1-6">
         <ng-include src="'navbar.html'"></ng-include>
       </div>
       <div class="pure-u-md-5-6">
@@ -44,11 +44,36 @@
           </ul>
         </div>
         <div id="files-list">
-          <ul style="list-style: none;">
-            <li><a ng-if="$location.path() != '/files'" ng-href="[[get_path('..')]]"><i class="fa fa-folder-o"></i>..</a></li>
-            <li ng-repeat="dir in files.dirs track by $index"><a ng-href="[[get_path(dir)]]"><i class="fa fa-folder-o"></i>[[dir]]</a><a href="" ng-click="delete_path(dir)"><i class="fa fa-trash-o"></i></a></li>
-            <li ng-repeat="file in files.files track by $index"><a href="#"><i class="fa fa-file-o"></i>[[file]]</a><a href="" ng-click="delete_path(file)"><i class="fa fa-trash-o"></i></a></li>
-          </ul>
+          <table class="pure-table pure-table-horizontal">
+            <thead>
+              <tr>
+                <td ng-click="select_all();" ng-class="['fa', 'fa-square-o']"></td>
+                <th ng-click="toggle_sort_by('name');">name</th>
+                <th ng-click="toggle_sort_by('size');">size</th>
+                <th ng-click="toggle_sort_by('date');">modified</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr ng-show="$location.path() != '/files'">
+                <td></td>
+                <td><a ng-href="[[get_path('..')]]"><i class="fa fa-folder-o"></i>..</a></td>
+                <td></td>
+                <td></td>
+              </tr>
+              <tr ng-repeat="dir in files.dirs track by $index">
+                <td ng-click="select($index);" ng-class="['fa', 'fa-square-o']"></td>
+                <td><a ng-href="[[get_path(dir)]]"><i class="fa fa-folder-o"></i>[[dir]]</a><a ng-if="api == 'files'" href="" ng-click="delete_path(dir)"><i class="fa fa-trash-o"></i></a><a ng-if="api == 'files'" href="" ng-click="share_path(dir)"><i class="fa fa-share-alt"></i>[[shared[dir]; ]]</a></td>
+                <td>X kB</td>
+                <td>someday</td>
+              </tr>
+              <tr ng-repeat="file in files.files track by $index">
+                <td ng-click="select($index);" ng-class="['fa', 'fa-square-o']"></td>
+                <td><a href="#"><i class="fa fa-file-o"></i>[[file]]</a><a ng-if="api == 'files'" href="" ng-click="delete_path(file)"><i class="fa fa-trash-o"></i></a><a ng-if="api == 'files'" href="" ng-click="share_path(file)"><i class="fa fa-share-alt"></i>[[shared[file]; ]]</a></td>
+                <td>X kB</td>
+                <td>someday</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </script>

@@ -7,6 +7,7 @@ from shutil import rmtree
 from cork import Cork
 from bottle import abort
 
+DEBUG = True
 aaa = Cork('cork_conf')
 root_dir = join_path(getcwd(), 'files')
 files_path = 'files'
@@ -120,12 +121,14 @@ def check_config_path(path):
 
 def create_random_folder(path):
     count = 0
-    create = join_path(path, random_generator())
+    ruid = random_generator()
+    create = join_path(path, ruid)
     while isdir(create) and exists(create) and count < 10:
-        create = join_path(path, random_generator())
+        ruid = random_generator()
+        create = join_path(path, ruid)
         count += 1
     check_config_path(create)
-    return create
+    return ruid, create
 
 
 def configure(path, key, value=None, subdir=None):

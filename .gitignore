@@ -3,3 +3,4 @@ venv
 *.swp
 files
 bower_components
+cork_conf/*.json

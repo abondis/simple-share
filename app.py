@@ -9,13 +9,11 @@ from simpleshare.tools import delete_path, get_files
 from simpleshare.tools import check_config_path, create_random_folder
 from simpleshare.tools import configure, root_dir
 from simpleshare.tools import permitted_files_path, protect_path
-from simpleshare.tools import permitted_config_path
+from simpleshare.tools import permitted_config_path, DEBUG
 from cork import Cork
 
 aaa = Cork('cork_conf')
 authorize = aaa.make_auth_decorator(fail_redirect="/login", role="user")
-
-DEBUG = True
 
 
 defaults = {
@@ -54,10 +52,14 @@ def logout():
 
 @get('/files')
 @get('/files/<path:path>')
-@get('/shared')
-@get('/shared/<path:path>')
 @authorize()
 def default(path=None):
+    return template('index')
+
+
+@get('/shared')
+@get('/shared/<path:path>')
+def default_public(path=None):
     return template('index')
 
 
@@ -143,7 +145,7 @@ def create(path='.'):
     """Create a folder or a file"""
     real_path = protect_path(path)
     file_type = post_get('type')
-    overwrite = request.POST.get('overwrite', False)
+    overwrite = post_get('overwrite') or False
     uploads = request.files
 
     check_config_path(real_path)
@@ -161,7 +163,8 @@ def create(path='.'):
 @authorize()
 def share(path="."):
     """Share a file or a folder"""
-    reuse = post_get('reuse')
+    reuse = post_get('reuse') or None
+    print(reuse)
     public = post_get('public')
     users = post_get('users')
     config = permitted_config_path()
@@ -177,13 +180,14 @@ def share(path="."):
     except IOError:
         abort(403)
     if reuse is not None:
+        print(reuse)
         files = get_files(config_shared_path)
         if reuse in files:
             uid_path = join_path(config, reuse)
         else:
             abort(400, "This sharing ID is invalid")
     else:
-        uid_path = create_random_folder(config)
+        uid, uid_path = create_random_folder(config)
     configure(
         config_shared_path,
         basename(uid_path),
@@ -191,7 +195,7 @@ def share(path="."):
     configure(uid_path, 'path', real_path)
     configure(uid_path, 'public', public)
     configure(uid_path, 'users', users)
-    return {'status': 'ok'}
+    return {'status': 'shared', 'msg': uid}
 
 
 if __name__ == "__main__":
