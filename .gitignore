@@ -4,3 +4,7 @@ venv
 files
 bower_components
 cork_conf/*.json
+beaker
+build
+dist
+*.egg-info
