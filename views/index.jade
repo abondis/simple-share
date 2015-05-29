@@ -58,9 +58,13 @@ html(ng-app="simpleShare")
                 | [[dir]]
               a(href="", ng-click="delete_path(dir)")
                 i.fa.fa-trash-o
+              a(href="", ng-click="share_path(dir)")
+                i.fa.fa-share-alt
             li(ng-repeat="file in files.files track by $index")
               a(href="#")
                 i.fa.fa-file-o
                 | [[file]]
               a(href="", ng-click="delete_path(file)")
                 i.fa.fa-trash-o
+              a(href="", ng-click="share_path(file)")
+                i.fa.fa-share-alt
