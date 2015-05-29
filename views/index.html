@@ -68,7 +68,7 @@
               </tr>
               <tr ng-repeat="file in files.files track by $index">
                 <td ng-click="select($index);" ng-class="['fa', 'fa-square-o']"></td>
-                <td><a href="#"><i class="fa fa-file-o"></i>[[file]]</a><a ng-if="api == 'files'" href="" ng-click="delete_path(file)"><i class="fa fa-trash-o"></i></a><a ng-if="api == 'files'" href="" ng-click="share_path(file)"><i class="fa fa-share-alt"></i>[[shared[file]; ]]</a></td>
+                <td><a ng-href="/get[[get_path(file)]]" target="_self"><i class="fa fa-file-o"></i>[[file]]</a><a ng-if="api == 'files'" href="" ng-click="delete_path(file)"><i class="fa fa-trash-o"></i></a><a ng-if="api == 'files'" href="" ng-click="share_path(file)"><i class="fa fa-share-alt"></i>[[shared[file]; ]]</a></td>
                 <td>X kB</td>
                 <td>someday</td>
               </tr>

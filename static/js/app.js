@@ -142,6 +142,10 @@ angular.module('simpleShare', ['ngRoute', 'ngResource', 'ngFileUpload'])
                                  // console.log('neh');
                              });
                      };
+                     $scope.download_file = function(file) {
+                         var f = '';
+                         f = f + file;
+                     };
                      $scope.upload_files = {};
                      $scope.$watch('upload_files', function () {
                          $scope.upload($scope.upload_files);

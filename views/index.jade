@@ -79,7 +79,7 @@ html(ng-app="simpleShare")
               tr(ng-repeat="file in files.files track by $index")
                 td(ng-click="select($index);", ng-class="['fa', 'fa-square-o']")
                 td
-                  a(href="#")
+                  a(ng-href="/get[[get_path(file)]]", target="_self")
                     i.fa.fa-file-o
                     | [[file]]
                   a(ng-if="api == 'files'", href="", ng-click="delete_path(file)")

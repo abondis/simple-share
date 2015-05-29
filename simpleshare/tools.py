@@ -3,9 +3,10 @@ import string
 import random
 from os.path import isdir, isfile, exists
 from os.path import join as join_path, abspath, realpath
+from os.path import split as split_path
 from shutil import rmtree
 from cork import Cork
-from bottle import abort
+from bottle import abort, response, static_file
 
 DEBUG = True
 aaa = Cork('cork_conf')
@@ -17,6 +18,12 @@ permitted_files_path = lambda: permitted_path(
     aaa.current_user.username, files_path)
 permitted_config_path = lambda: permitted_path(
     aaa.current_user.username, config_path)
+
+defaults = {
+    'public': True,
+    'users': None,
+    'expires': False
+    }
 
 
 def random_generator(size=4, chars=string.ascii_letters + string.digits):
@@ -60,18 +67,26 @@ def get_real_path(restrict=permitted_path, path=None):
 def list_dir(path):
     """Return folder content or filename
     """
-    ls = {'dirs': [], 'files': []}
-    if isdir(path) and exists(path):
-        _ls = listdir(path)
-        for p in _ls:
-            ls_path = join_path(path, p)
-            if isdir(ls_path):
-                ls['dirs'].append(p)
-            elif isfile(ls_path):
-                ls['files'].append(p)
-    elif isfile(path):
-        return path
-    return ls
+    try:
+        ls = {'dirs': [], 'files': []}
+        if isdir(path) and exists(path):
+            _ls = listdir(path)
+            for p in _ls:
+                ls_path = join_path(path, p)
+                if isdir(ls_path):
+                    ls['dirs'].append(p)
+                elif isfile(ls_path):
+                    ls['files'].append(p)
+        elif isfile(path):
+            if DEBUG:
+                root, filename = split_path(path)
+                return static_file(filename, root=root, download=True)
+            else:
+                response.headers['X-Accel-Redirect'] = path
+                return ''
+        return ls
+    except OSError:
+        abort(404)
 
 
 def get_config(path, key, subdir=None):

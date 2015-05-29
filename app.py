@@ -15,12 +15,7 @@ from cork import Cork
 aaa = Cork('cork_conf')
 authorize = aaa.make_auth_decorator(fail_redirect="/login", role="user")
 
-
-defaults = {
-    'public': True,
-    'users': None,
-    'expires': False
-    }
+PATH_ERROR = "The path is not available or doesn't exist"
 
 
 def post_get(name, default=''):
@@ -79,34 +74,35 @@ def partials(template):
     return template(template)
 
 
+@get('/get/shared/<user>/<uid>')
+@get('/get/shared/<user>/<uid>/<path:path>')
 @get('/api/shared/<user>/<uid>')
 @get('/api/shared/<user>/<uid>/<path:path>')
 def list_shared(user, uid, path='.'):
     """Return a list of files in a shared folder"""
     real_shared_path = get_path_from_uid(user, uid)
+    permitted = join_path(root_dir, real_shared_path)
     try:
-        permitted = join_path(root_dir, real_shared_path)
         real_path = get_real_path(permitted, path)
     except IOError:
-        abort(403, "The path is not available or doesn't exist")
-    try:
-        return list_dir(real_path)
-    except OSError:
-        abort(404)
-    abort(403, {'status': 'ko'})
+        abort(403, PATH_ERROR)
+    print("getting {}".format(real_path))
+    return list_dir(real_path)
 
 
+@get('/get/files')
+@get('/get/files/<path:path>')
 @get('/api/files')
 @get('/api/files/<path:path>')
 @authorize()
 def list_path(path='.'):
     """Return a list of files in a path if permitted
     """
-    real_path = protect_path(path)
     try:
-        return list_dir(real_path)
-    except OSError:
-        abort(404)
+        real_path = protect_path(path)
+    except IOError:
+        abort(403, PATH_ERROR)
+    return list_dir(real_path)
 
 
 @delete('/api/files/<path:path>')
@@ -125,7 +121,7 @@ def api_delete_path(path='.'):
             permitted = abspath(realpath(join_path(real_path, '..')))
             assert real_path.startswith(permitted)
         except:
-            abort(403)
+            abort(403, PATH_ERROR)
         ls = list_dir(permitted)
         if DEBUG:
             ls = {
@@ -178,9 +174,8 @@ def share(path="."):
             config, rel_shared_path)
         check_config_path(config_shared_path)
     except IOError:
-        abort(403)
+        abort(403, PATH_ERROR)
     if reuse is not None:
-        print(reuse)
         files = get_files(config_shared_path)
         if reuse in files:
             uid_path = join_path(config, reuse)
@@ -210,4 +205,10 @@ if __name__ == "__main__":
         'session.validate_key': True,
     }
     web_app = SessionMiddleware(app(), session_opts)
-    run(app=web_app, host='localhost', port=8080, debug=DEBUG, reloader=True)
+    run(
+        app=web_app,
+        server='bjoern',
+        host='localhost',
+        port=8080,
+        debug=DEBUG,
+        reloader=True)
