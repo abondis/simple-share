@@ -81,6 +81,7 @@ def partials(template):
 def list_shared(user, uid, path='.'):
     """Return a list of files in a shared folder"""
     real_shared_path = get_path_from_uid(user, uid)
+    print(real_shared_path)
     permitted = join_path(root_dir, real_shared_path)
     try:
         real_path = get_real_path(permitted, path)

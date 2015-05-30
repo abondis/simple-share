@@ -4,6 +4,7 @@ import random
 from os.path import isdir, isfile, exists
 from os.path import join as join_path, abspath, realpath
 from os.path import split as split_path
+from os.path import getsize, getmtime, relpath
 from shutil import rmtree
 from cork import Cork
 from bottle import abort, response, static_file
@@ -24,6 +25,14 @@ defaults = {
     'users': None,
     'expires': False
     }
+
+sizes = ['B', 'KiB', 'MiB', 'GiB', 'TiB']
+
+
+def nice_size(size):
+    mul = len(str(size))/3
+    size = float(size) / float(1 << (10 * mul))
+    return "{:.2f} {}".format(size, sizes[mul])
 
 
 def random_generator(size=4, chars=string.ascii_letters + string.digits):
@@ -64,19 +73,41 @@ def get_real_path(restrict=permitted_path, path=None):
         raise IOError("{} doesn't exist".format(path))
 
 
+def prep_ls(path, details=True):
+    ls = {'dirs': [], 'files': []}
+    _ls = listdir(path)
+    if aaa.user_is_anonymous:
+        user = None
+    else:
+        user = aaa.current_user
+    for p in _ls:
+        ls_path = join_path(path, p)
+        if details:
+            f = {'name': p,
+                 'size': nice_size(getsize(ls_path)),
+                 'mtime': getmtime(ls_path),
+                 }
+            if user:
+                shares = [
+                    join_path(user.username, x)
+                    for x in get_uid_from_path(ls_path)['files']]
+                print('share list for {}: {}'.format(ls_path, shares))
+                f['shares'] = shares
+        else:
+            f = p
+        if isdir(ls_path):
+            ls['dirs'].append(f)
+        elif isfile(ls_path):
+            ls['files'].append(f)
+    return ls
+
+
 def list_dir(path):
     """Return folder content or filename
     """
     try:
-        ls = {'dirs': [], 'files': []}
         if isdir(path) and exists(path):
-            _ls = listdir(path)
-            for p in _ls:
-                ls_path = join_path(path, p)
-                if isdir(ls_path):
-                    ls['dirs'].append(p)
-                elif isfile(ls_path):
-                    ls['files'].append(p)
+            ls = prep_ls(path)
         elif isfile(path):
             if DEBUG:
                 root, filename = split_path(path)
@@ -101,6 +132,19 @@ def get_config(path, key, subdir=None):
         with open(path, 'r') as f:
             value = f.read()
         return value
+
+
+def get_uid_from_path(path):
+    share_config_path = permitted_config_path()
+    rel_share_path = relpath(path, permitted_files_path())
+    share_config_path = join_path(share_config_path, rel_share_path)
+    print("in get_uid {}".format(path))
+    print("in get_uid share config path is {}".format(share_config_path))
+    if isdir(share_config_path):
+        shares_names = prep_ls(share_config_path, False)
+        print("in get_uid isdir {}".format(shares_names))
+        return shares_names
+    return {'files': []}
 
 
 def get_path_from_uid(user, uid):

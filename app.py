@@ -17,7 +17,7 @@ if __name__ == "__main__":
     web_app = SessionMiddleware(app(), session_opts)
     run(
         app=web_app,
-        server='bjoern',
+        #server='bjoern',
         host='localhost',
         port=8080,
         debug=DEBUG,
