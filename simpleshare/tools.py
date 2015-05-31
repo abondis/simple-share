@@ -27,7 +27,8 @@ permitted_shares_path = lambda: permitted_path(
 defaults = {
     'public': True,
     'users': None,
-    'expires': False
+    'expires': False,
+    'shares': False
     }
 
 sizes = ['B', 'KiB', 'MiB', 'GiB', 'TiB']
@@ -124,7 +125,7 @@ def list_dir(path):
         abort(404)
 
 
-def get_config(path, key, subdir=None):
+def get_config(path, key, subdir='conf'):
     """Get configuration from folder/path
     """
     if subdir is not None:
@@ -133,8 +134,12 @@ def get_config(path, key, subdir=None):
     if not exists(path):
         return defaults[key]
     else:
-        with open(path, 'r') as f:
-            value = f.read()
+        if isdir(path):
+            value = prep_ls(path, False)
+            value = [x for x in value if x not in keys]
+        elif isfile(path):
+            with open(path, 'r') as f:
+                value = f.read()
         return value
 
 
@@ -194,7 +199,7 @@ def create_random_folder(path):
     return ruid, create
 
 
-def configure(path, key, value=None, subdir=None):
+def configure(path, key, value=None, subdir='conf'):
     """Configure things using folders and files
     value == None: keep default or don't modify the file
     """
@@ -204,8 +209,7 @@ def configure(path, key, value=None, subdir=None):
         path = join_path(path, subdir)
     check_config_path(path)
     path = join_path(path, key)
-    with open(path, 'w') as f:
-        f.write(value)
+    check_config_path(path)
 
 
 def get_files(path):
