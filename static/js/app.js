@@ -89,26 +89,28 @@ angular.module('simpleShare', ['ngRoute', 'ngResource', 'ngFileUpload'])
                                  path:$routeParams.path }
                          );
                      };
-                     $scope.delete_path = function(path) {
-                         var p = $scope.get_api_file_path(path);
+                     $scope.delete_path = function(path, share) {
+                         var api = $scope.api.api;
+                         if (share) { api = 'shared'; }
+                         var _p = $scope.get_api_file_path(path);
                          var file = new Files();
                          file.$delete(
-                             {api: $scope.api.api,
-                              path:p },
+                             {api: api,
+                              path:_p },
                              function(data) {
                                  $scope.files = data;
                              }
                          );
                      };
                      $scope.share_path = function(path) {
-                         var p = $scope.get_api_file_path(path);
+                         var sp = $scope.get_api_file_path(path);
                          var file = new Files();
                          file.$share(
                              {api: $scope.api.api,
-                              path:p },
+                              path:sp },
                              function(data) {
                                  console.log(path);
-                                 $scope.shared[path] = data.msg;
+                                 $scope.files = data;
                                  console.log($scope.shared);
                              }
                          );
@@ -116,6 +118,7 @@ angular.module('simpleShare', ['ngRoute', 'ngResource', 'ngFileUpload'])
                      $scope.get_api_file_path = function(folder) {
                          var path = $location.path();
                          path = path.split('/');
+                         // remove / files|shared
                          path.shift();
                          path.shift();
                          if (folder) {path.push(folder);}

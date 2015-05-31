@@ -1,6 +1,6 @@
 from bottle import run, app
 import simpleshare
-from simpleshare import DEBUG
+from simpleshare.tools import DEBUG
 simpleshare
 
 if __name__ == "__main__":

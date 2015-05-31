@@ -1,21 +1,23 @@
 from bottle import get, post, delete
 from bottle import request
 from bottle import abort, template, static_file
-from os.path import join as join_path, abspath, realpath
-from os.path import relpath, basename
+from os.path import join as join_path
+from os.path import relpath, basename, dirname
 from simpleshare.tools import get_real_path
 from simpleshare.tools import list_dir, get_path_from_uid
 from simpleshare.tools import delete_path, get_files
 from simpleshare.tools import check_config_path, create_random_folder
 from simpleshare.tools import configure, root_dir
 from simpleshare.tools import permitted_files_path, protect_path
-from simpleshare.tools import permitted_config_path, DEBUG
+from simpleshare.tools import permitted_config_path
+from simpleshare.tools import permitted_shares_path
+from simpleshare.tools import relist_parent_folder
+from simpleshare.tools import PATH_ERROR
+from simpleshare.tools import validate_path
 from cork import Cork
 
 aaa = Cork('cork_conf')
 authorize = aaa.make_auth_decorator(fail_redirect="/login", role="user")
-
-PATH_ERROR = "The path is not available or doesn't exist"
 
 
 def post_get(name, default=''):
@@ -81,13 +83,13 @@ def partials(template):
 def list_shared(user, uid, path='.'):
     """Return a list of files in a shared folder"""
     real_shared_path = get_path_from_uid(user, uid)
-    print(real_shared_path)
+    # print(real_shared_path)
     permitted = join_path(root_dir, real_shared_path)
     try:
         real_path = get_real_path(permitted, path)
     except IOError:
         abort(403, PATH_ERROR)
-    print("getting {}".format(real_path))
+    # print("getting {}".format(real_path))
     return list_dir(real_path)
 
 
@@ -114,23 +116,27 @@ def api_delete_path(path='.'):
     real_path = protect_path(path)
     try:
         delete_path(real_path)
-        try:
-            # after deleting we want to re-list what the current folder hosts
-            # append /..
-            # follow symlink ???
-            # get absolutepath
-            permitted = abspath(realpath(join_path(real_path, '..')))
-            assert real_path.startswith(permitted)
-        except:
-            abort(403, PATH_ERROR)
-        ls = list_dir(permitted)
-        if DEBUG:
-            ls = {
-                'dirs':
-                ['deleted', 'something'],
-                'files':
-                ['maybe it was', path]}
-        return ls
+        return relist_parent_folder(real_path)
+    except OSError:
+        abort(404)
+
+
+@delete('/api/shared/<path:path>')
+@authorize()
+def _delete_shared_path(path='.'):
+    """
+    We delete .../user/shares/<uid>
+    and .../user/config/<path>/<uid>
+    """
+    uid = basename(path)
+    folder = dirname(path)
+    abs_folder_path = protect_path(folder)
+    config_folder_path = protect_path(path, 'config')
+    config_uid_path = protect_path(uid, 'config')
+    try:
+        delete_path(config_folder_path)
+        delete_path(config_uid_path)
+        return relist_parent_folder(abs_folder_path)
     except OSError:
         abort(404)
 
@@ -144,7 +150,10 @@ def create(path='.'):
     file_type = post_get('type')
     overwrite = post_get('overwrite') or False
     uploads = request.files
-
+    if not validate_path(path):
+        abort(403, "You cannot create a sub-folder or a file with "
+              "the same name as it's parent's 'sharing' name"
+              "{}".format(basename(path)))
     check_config_path(real_path)
     if file_type == "file":
         for f in uploads:
@@ -161,34 +170,40 @@ def create(path='.'):
 def share(path="."):
     """Share a file or a folder"""
     reuse = post_get('reuse') or None
-    print(reuse)
+    # print(reuse)
     public = post_get('public')
     users = post_get('users')
-    config = permitted_config_path()
+    # .../user/config
+    path_config = permitted_config_path()
+    # .../user/shares
+    uidshares_config = permitted_shares_path()
     # /.../user/files/....
     real_path = protect_path(path)
     try:
         # /.../user/files
         # get relative path, to use in configuration path
         rel_shared_path = relpath(real_path, permitted_files_path())
-        config_shared_path = join_path(
-            config, rel_shared_path)
-        check_config_path(config_shared_path)
+        # .../user/config/rel/path/
+        shared_path_config_path = join_path(
+            path_config, rel_shared_path)
+        check_config_path(shared_path_config_path)
     except IOError:
         abort(403, PATH_ERROR)
     if reuse is not None:
-        files = get_files(config_shared_path)
+        files = get_files(shared_path_config_path)
         if reuse in files:
-            uid_path = join_path(config, reuse)
+            uid_path = join_path(uidshares_config, reuse)
         else:
             abort(400, "This sharing ID is invalid")
     else:
-        uid, uid_path = create_random_folder(config)
+        uid, uid_path = create_random_folder(uidshares_config)
+    # create .../user/config/rel/path/UID
     configure(
-        config_shared_path,
-        basename(uid_path),
+        shared_path_config_path,
+        reuse or uid,
         real_path)
+    # configure .../user/shares/UID/
     configure(uid_path, 'path', real_path)
     configure(uid_path, 'public', public)
     configure(uid_path, 'users', users)
-    return {'status': 'shared', 'msg': uid}
+    return relist_parent_folder(real_path)

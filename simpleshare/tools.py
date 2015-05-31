@@ -10,15 +10,19 @@ from cork import Cork
 from bottle import abort, response, static_file
 
 DEBUG = True
+PATH_ERROR = "The path is not available or doesn't exist"
 aaa = Cork('cork_conf')
 root_dir = join_path(getcwd(), 'files')
 files_path = 'files'
 config_path = 'config'
+uidshares_path = 'shares'
 permitted_path = lambda user, postfix: join_path(root_dir, user, postfix)
 permitted_files_path = lambda: permitted_path(
     aaa.current_user.username, files_path)
 permitted_config_path = lambda: permitted_path(
     aaa.current_user.username, config_path)
+permitted_shares_path = lambda: permitted_path(
+    aaa.current_user.username, uidshares_path)
 
 defaults = {
     'public': True,
@@ -89,9 +93,9 @@ def prep_ls(path, details=True):
                  }
             if user:
                 shares = [
-                    join_path(user.username, x)
+                    (user.username, x)
                     for x in get_uid_from_path(ls_path)['files']]
-                print('share list for {}: {}'.format(ls_path, shares))
+                # print('share list for {}: {}'.format(ls_path, shares))
                 f['shares'] = shares
         else:
             f = p
@@ -108,6 +112,7 @@ def list_dir(path):
     try:
         if isdir(path) and exists(path):
             ls = prep_ls(path)
+            return ls
         elif isfile(path):
             if DEBUG:
                 root, filename = split_path(path)
@@ -115,7 +120,6 @@ def list_dir(path):
             else:
                 response.headers['X-Accel-Redirect'] = path
                 return ''
-        return ls
     except OSError:
         abort(404)
 
@@ -135,21 +139,21 @@ def get_config(path, key, subdir=None):
 
 
 def get_uid_from_path(path):
-    share_config_path = permitted_config_path()
+    path_config_path = permitted_config_path()
     rel_share_path = relpath(path, permitted_files_path())
-    share_config_path = join_path(share_config_path, rel_share_path)
-    print("in get_uid {}".format(path))
-    print("in get_uid share config path is {}".format(share_config_path))
-    if isdir(share_config_path):
-        shares_names = prep_ls(share_config_path, False)
-        print("in get_uid isdir {}".format(shares_names))
+    path_config_path = join_path(path_config_path, rel_share_path)
+    # print("in get_uid {}".format(path))
+    # print("in get_uid share config path is {}".format(share_config_path))
+    if isdir(path_config_path):
+        shares_names = prep_ls(path_config_path, False)
+        # print("in get_uid isdir {}".format(shares_names))
         return shares_names
     return {'files': []}
 
 
 def get_path_from_uid(user, uid):
     config = permitted_path(user,
-                            join_path(config_path, uid))
+                            join_path(uidshares_path, uid))
     if isdir(config):
         return get_config(config, 'path')
     return None
@@ -210,11 +214,41 @@ def get_files(path):
     return files['files']
 
 
-def protect_path(path):
-    current_user = aaa.current_user.username
-    permitted = permitted_path(current_user, files_path)
+def protect_path(path, path_type='files'):
+    if path_type == 'files':
+        permitted = permitted_files_path()
+    elif path_type == 'config':
+        permitted = permitted_config_path()
+    elif path_type == 'shares':
+        permitted = permitted_shares_path()
     try:
         real_path = get_real_path(permitted, path)
     except IOError:
         abort(403)
     return real_path
+
+
+def relist_parent_folder(path):
+    try:
+        # after deleting we want to re-list what the current folder hosts
+        # append /..
+        # follow symlink ???
+        # get absolutepath
+        permitted = abspath(realpath(join_path(path, '..')))
+        assert path.startswith(permitted)
+    except:
+        abort(403, PATH_ERROR)
+    ls = list_dir(permitted)
+    if DEBUG:
+        ls['dirs'].append({'name': 'edited something'})
+        ls['files'].append({'name': 'edited {}'.format(path)})
+    return ls
+
+
+def validate_path(path):
+    """Check if a path exists in config
+    which means the path has been shared with an identicall UID"""
+    abs_config_path = protect_path(path, 'config')
+    if exists(abs_config_path) and isfile(abs_config_path):
+        return False
+    return True
