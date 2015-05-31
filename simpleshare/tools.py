@@ -130,13 +130,13 @@ def get_config(path, key, subdir='conf'):
     """
     if subdir is not None:
         path = join_path(path, subdir)
-    path = join_path(path, key)
+    path = join_path(path, key + ".key")
     if not exists(path):
         return defaults[key]
     else:
         if isdir(path):
             value = prep_ls(path, False)
-            value = [x for x in value if x not in keys]
+            value = [x for x in value if x not in defaults]
         elif isfile(path):
             with open(path, 'r') as f:
                 value = f.read()
@@ -199,7 +199,7 @@ def create_random_folder(path):
     return ruid, create
 
 
-def configure(path, key, value=None, subdir='conf'):
+def configure(path, key, value=None, subdir=None):
     """Configure things using folders and files
     value == None: keep default or don't modify the file
     """
@@ -208,8 +208,9 @@ def configure(path, key, value=None, subdir='conf'):
     if subdir is not None:
         path = join_path(path, subdir)
     check_config_path(path)
-    path = join_path(path, key)
-    check_config_path(path)
+    path = join_path(path, key + ".key")
+    with open(path, 'w') as f:
+        f.write(value)
 
 
 def get_files(path):

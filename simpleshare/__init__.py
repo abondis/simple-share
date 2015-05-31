@@ -150,10 +150,10 @@ def create(path='.'):
     file_type = post_get('type')
     overwrite = post_get('overwrite') or False
     uploads = request.files
-    if not validate_path(path):
-        abort(403, "You cannot create a sub-folder or a file with "
-              "the same name as it's parent's 'sharing' name"
-              "{}".format(basename(path)))
+    # if not validate_path(path):
+    #     abort(403, "You cannot create a sub-folder or a file with "
+    #           "the same name as it's parent's 'sharing' name"
+    #           "{}".format(basename(path)))
     check_config_path(real_path)
     if file_type == "file":
         for f in uploads:
