@@ -5,15 +5,14 @@ from os.path import join as join_path
 from os.path import relpath, basename, dirname
 from simpleshare.tools import get_real_path
 from simpleshare.tools import list_dir, get_path_from_uid
-from simpleshare.tools import delete_path, get_files
-from simpleshare.tools import check_config_path, create_random_folder
+from simpleshare.tools import delete_path, get_config
+from simpleshare.tools import create_path, create_random_folder
 from simpleshare.tools import configure, root_dir
 from simpleshare.tools import permitted_files_path, protect_path
 from simpleshare.tools import permitted_config_path
 from simpleshare.tools import permitted_shares_path
 from simpleshare.tools import relist_parent_folder
 from simpleshare.tools import PATH_ERROR
-from simpleshare.tools import validate_path
 from cork import Cork
 
 aaa = Cork('cork_conf')
@@ -154,7 +153,7 @@ def create(path='.'):
     #     abort(403, "You cannot create a sub-folder or a file with "
     #           "the same name as it's parent's 'sharing' name"
     #           "{}".format(basename(path)))
-    check_config_path(real_path)
+    create_path(real_path)
     if file_type == "file":
         for f in uploads:
             uploads.get(f).save(
@@ -184,26 +183,28 @@ def share(path="."):
         # get relative path, to use in configuration path
         rel_shared_path = relpath(real_path, permitted_files_path())
         # .../user/config/rel/path/
-        shared_path_config_path = join_path(
-            path_config, rel_shared_path)
-        check_config_path(shared_path_config_path)
+        # shared_path_config_path = join_path(
+        #     path_config, rel_shared_path)
+        # check_config_path(shared_path_config_path)
     except IOError:
         abort(403, PATH_ERROR)
     if reuse is not None:
-        files = get_files(shared_path_config_path)
-        if reuse in files:
-            uid_path = join_path(uidshares_config, reuse)
-        else:
+        try:
+            shared_path = get_config(reuse, 'path', 'shares')
+        except IOError:
+            abort(400, "This sharing ID is invalid")
+        if shared_path != rel_shared_path:
             abort(400, "This sharing ID is invalid")
     else:
-        uid, uid_path = create_random_folder(uidshares_config)
+        uid, uid_path = create_random_folder()
     # create .../user/config/rel/path/UID
+    print('uid {} Uid_path {}'.format(reuse or uid, uid_path))
     configure(
-        shared_path_config_path,
+        rel_shared_path,
         reuse or uid,
-        real_path)
+        rel_shared_path)
     # configure .../user/shares/UID/
-    configure(uid_path, 'path', real_path)
-    configure(uid_path, 'public', public)
-    configure(uid_path, 'users', users)
+    configure(uid_path, 'path', real_path, 'shares')
+    configure(uid_path, 'public', public, 'shares')
+    configure(uid_path, 'users', users, 'shares')
     return relist_parent_folder(real_path)

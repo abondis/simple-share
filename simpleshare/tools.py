@@ -5,6 +5,7 @@ from os.path import isdir, isfile, exists
 from os.path import join as join_path, abspath, realpath
 from os.path import split as split_path
 from os.path import getsize, getmtime, relpath
+from os.path import sep
 from shutil import rmtree
 from cork import Cork
 from bottle import abort, response, static_file
@@ -13,6 +14,7 @@ DEBUG = True
 PATH_ERROR = "The path is not available or doesn't exist"
 aaa = Cork('cork_conf')
 root_dir = join_path(getcwd(), 'files')
+dir_sep = "#" + sep
 files_path = 'files'
 config_path = 'config'
 uidshares_path = 'shares'
@@ -23,12 +25,15 @@ permitted_config_path = lambda: permitted_path(
     aaa.current_user.username, config_path)
 permitted_shares_path = lambda: permitted_path(
     aaa.current_user.username, uidshares_path)
+type_to_path = {
+    'files': permitted_files_path,
+    'config': permitted_config_path,
+    'shares': permitted_shares_path}
 
 defaults = {
     'public': True,
     'users': None,
-    'expires': False,
-    'shares': False
+    'expires': False
     }
 
 sizes = ['B', 'KiB', 'MiB', 'GiB', 'TiB']
@@ -95,7 +100,7 @@ def prep_ls(path, details=True):
             if user:
                 shares = [
                     (user.username, x)
-                    for x in get_uid_from_path(ls_path)['files']]
+                    for x in get_uid_from_path(ls_path)]
                 # print('share list for {}: {}'.format(ls_path, shares))
                 f['shares'] = shares
         else:
@@ -125,43 +130,43 @@ def list_dir(path):
         abort(404)
 
 
-def get_config(path, key, subdir='conf'):
+def get_config(rel_path, key, subdir='config'):
     """Get configuration from folder/path
     """
-    if subdir is not None:
-        path = join_path(path, subdir)
-    path = join_path(path, key + ".key")
+    key = key + "K"
+    Upath = prep_upath(rel_path)
+    config_path = protect_path(Upath, subdir)
+    if not subdir.endswith('/shares'):
+        path = join_path(config_path, subdir)
+    else:
+        path = config_path
+    print(path)
+    if not exists(path) and not isdir(path):
+        raise IOError
+    path = join_path(path, key)
     if not exists(path):
         return defaults[key]
     else:
-        if isdir(path):
-            value = prep_ls(path, False)
-            value = [x for x in value if x not in defaults]
-        elif isfile(path):
-            with open(path, 'r') as f:
-                value = f.read()
+        with open(path, 'r') as f:
+            value = f.read()
         return value
 
 
 def get_uid_from_path(path):
-    path_config_path = permitted_config_path()
-    rel_share_path = relpath(path, permitted_files_path())
-    path_config_path = join_path(path_config_path, rel_share_path)
-    # print("in get_uid {}".format(path))
-    # print("in get_uid share config path is {}".format(share_config_path))
-    if isdir(path_config_path):
-        shares_names = prep_ls(path_config_path, False)
-        # print("in get_uid isdir {}".format(shares_names))
-        return shares_names
-    return {'files': []}
+    rel_path = relpath(path, permitted_files_path())
+    Upath = prep_upath(rel_path)
+    config_path = protect_path(Upath, 'config')
+    print(config_path)
+    if isdir(config_path):
+        shares_names = prep_ls(config_path, False)['files']
+        sharing_uids = [x[:-1] for x in shares_names]
+        return sharing_uids
+    return []
 
 
 def get_path_from_uid(user, uid):
-    config = permitted_path(user,
-                            join_path(uidshares_path, uid))
-    if isdir(config):
-        return get_config(config, 'path')
-    return None
+    # config/user/shares/uid
+    return get_config(uid, 'path', '{}/shares'.format(user))
 
 
 def delete_path(real_path):
@@ -178,37 +183,75 @@ def delete_path(real_path):
                 rmtree(real_path)
 
 
-def check_config_path(path):
+def check_config_path(rel_path, subdir='config'):
     """prepares config folder and check everything is fine"""
+    Upath = prep_upath(rel_path)
+    # print("going to try to create {}".format(Upath))
+    config_path = protect_path(Upath, subdir)
+    # print("in {}".format(config_path))
+    try:
+        return create_path(config_path)
+    except IOError:
+        raise
+
+
+def create_path(path):
+    # print("creating path {}".format(path))
     if exists(path):
         if not isdir(path):
             raise IOError("Configuration path is not accessible")
+        else:
+            return False
     else:
         makedirs(path)
+        return True
 
 
-def create_random_folder(path):
+def create_random_folder():
     count = 0
     ruid = random_generator()
-    create = join_path(path, ruid)
-    while isdir(create) and exists(create) and count < 10:
+    while not check_config_path(ruid, 'shares') and count < 10:
         ruid = random_generator()
-        create = join_path(path, ruid)
         count += 1
-    check_config_path(create)
-    return ruid, create
+    # return ruid, create
+    return ruid, ruid
 
 
-def configure(path, key, value=None, subdir=None):
+def prep_upath(rel_path):
+    # print("&" * 80)
+    # unique path to avoid key vs path collision
+    if rel_path.startswith(sep):
+        rel_path = rel_path[1:]
+    if not rel_path.endswith(sep):
+        rel_path = rel_path + sep
+    split_path = rel_path.split(sep)
+    # print(split_path)
+    # relative unique path
+    Upath = dir_sep.join(split_path)
+    # print(Upath)
+    # print("&" * 80)
+    return Upath
+
+
+def configure(rel_path, key, value=None, subdir='config'):
     """Configure things using folders and files
     value == None: keep default or don't modify the file
+    path: /a/b/c/config/some#/path#/
+    key: key + "K"
     """
+    # absolute config path
+    key = key + "K"
+    Upath = prep_upath(rel_path)
+    config_path = protect_path(Upath, subdir)
+    # print("*" * 80)
+    # print("got {} {} {} {}".format(rel_path, key, value, subdir))
+    # print(config_path)
+    create_path(config_path)
     if value is None:
-        return
-    if subdir is not None:
-        path = join_path(path, subdir)
-    check_config_path(path)
-    path = join_path(path, key + ".key")
+        return config_path
+    path = join_path(config_path, key)
+    # print(path)
+    # print("*" * 80)
     with open(path, 'w') as f:
         f.write(value)
 
@@ -226,6 +269,8 @@ def protect_path(path, path_type='files'):
         permitted = permitted_config_path()
     elif path_type == 'shares':
         permitted = permitted_shares_path()
+    elif path_type.endswith('shares'):
+        permitted = join_path(root_dir, path_type)
     try:
         real_path = get_real_path(permitted, path)
     except IOError:
