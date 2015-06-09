@@ -54,7 +54,7 @@ html(ng-app="simpleShare")
                     div.progress-bar.progress
                       | [[u_file.up_progress]] [[u_file.name]] 
         div#files-list
-          table.pure-table.pure-table-horizontal
+          table.pure-table.pure-table-striped.pure-table-horizontal
             thead
               tr
                 th(ng-click="select_all();", ng-class="['fa', 'fa-square-o']")
@@ -79,12 +79,13 @@ html(ng-app="simpleShare")
                     | [[dir.name]]
                   a(ng-if="api.api == 'files'", href="", ng-click="delete_path(dir.name)")
                     i.fa.fa-trash-o
-                  a(ng-if="api.api == 'files'", href="", ng-click="share_path(dir.name)")
+                  a.show(ng-if="api.api == 'files'", href="", ng-click="share_path(dir.name)")
                     i.fa.fa-share-alt
-                  div(ng-repeat="share in dir.shares")
-                    | [[$location.protocol()]]://[[$location.host()]]/shared/[[share[0];]]/[[share[1];]]
-                    a(ng-if="api.api == 'files'", href="", ng-click="delete_path(dir.name + '/' + share[1], true)")
-                      i.fa.fa-trash-o
+                  div.shares-list
+                    div(ng-repeat="share in dir.shares")
+                      | [[$location.protocol()]]://[[$location.host()]]/shared/[[share[0];]]/[[share[1];]]
+                      a(ng-if="api.api == 'files'", href="", ng-click="delete_path(dir.name + '/' + share[1], true)")
+                        i.fa.fa-trash-o
                 td
                     | [[dir.size]]
                 td [[dir.mtime * 1000| date:'yyyy-MM-dd HH:mm:ss Z']]
@@ -97,11 +98,12 @@ html(ng-app="simpleShare")
                     | [[file.name]]
                   a(ng-if="api.api == 'files'", href="", ng-click="delete_path(file.name)")
                     i.fa.fa-trash-o
-                  a(ng-if="api.api == 'files'", href="", ng-click="share_path(file.name)")
+                  a.show(ng-if="api.api == 'files'", href="", ng-click="share_path(file.name)")
                     i.fa.fa-share-alt
-                  div(ng-repeat="share in file.shares")
-                    | [[$location.protocol()]]://[[$location.host()]]/get/shared/[[share[0];]]/[[share[1];]]
-                    a(ng-if="api.api == 'files'", href="", ng-click="delete_path(file.name + '/' + share[1], true)")
-                      i.fa.fa-trash-o
+                  div.shares-list
+                    div(ng-repeat="share in file.shares")
+                      | [[$location.protocol()]]://[[$location.host()]]/get/shared/[[share[0];]]/[[share[1];]]
+                      a(ng-if="api.api == 'files'", href="", ng-click="delete_path(file.name + '/' + share[1], true)")
+                        i.fa.fa-trash-o
                 td [[file.size]]
                 td [[file.mtime * 1000| date:'yyyy-MM-dd HH:mm:ss Z']]
