@@ -72,7 +72,7 @@ html(ng-app="simpleShare")
                 td
               tr(ng-repeat="dir in files.dirs track by $index")
                 td
-                  a(ng-click="select($index);", ng-class="['fa', 'fa-square-o']")
+                  a(ng-click="select(dir.name);", ng-class="{'fa': true, 'fa-square-o': !is_selected(dir.name), 'fa-check-square-o': is_selected(dir.name)}")
                 td
                   a(ng-href="[[get_path(dir.name)]]")
                     i.fa.fa-folder-o
@@ -91,7 +91,7 @@ html(ng-app="simpleShare")
                 td [[dir.mtime * 1000| date:'yyyy-MM-dd HH:mm:ss Z']]
               tr(ng-repeat="file in files.files track by $index")
                 td
-                  a(ng-click="select($index);", ng-class="['fa', 'fa-square-o']")
+                  a(ng-click="select(file.name);", ng-class="{'fa': true, 'fa-square-o': !is_selected(file.name), 'fa-check-square-o': is_selected(file.name)}")
                 td
                   a(ng-href="/get[[get_path(file.name)]]", target="_self")
                     i.fa.fa-file-o

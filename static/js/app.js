@@ -79,6 +79,40 @@ angular.module('simpleShare', ['ngRoute', 'ngResource', 'ngFileUpload'])
                      } else if (p.indexOf('/shared') === 0){
                          $scope.api.api = 'shared';
                      }
+                     $scope.selected = [];
+                     $scope.selected_all = false;
+                     $scope.is_selected = function(name) {
+                         return $scope.selected.indexOf(name) > -1;
+                     };
+                     $scope.select_all = function() {
+                         if ($scope.selected_all == true) {
+                             $scope.selected_all = false;
+                             $scope.selected = [];
+                         } else {
+                             $scope.selected_all = true;
+                             var selected = $scope.files.dirs.map(
+                                 function(x) {
+                                     return x.name;
+                                 });
+                             selected = selected.concat($scope.files.files.map(
+                                 function(x) {
+                                     return x.name;
+                                 }));
+                             $scope.selected = selected;
+                         }
+                             
+                     };
+                     $scope.select = function(name) {
+                         var idx = $scope.selected.indexOf(name);
+                         $scope.selected_all = false;
+                         console.log($scope.selected);
+                         if (idx > -1) {
+                             $scope.selected.splice(idx, 1);
+                         } else {
+                             $scope.selected.push(name);
+                         }
+                        
+                     };
                      console.log($scope.api.api);
                      $scope.new_folder = '';
                      $scope.shared = {};
