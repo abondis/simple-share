@@ -182,10 +182,6 @@ def share(path="."):
         # /.../user/files
         # get relative path, to use in configuration path
         rel_shared_path = relpath(real_path, permitted_files_path())
-        # .../user/config/rel/path/
-        # shared_path_config_path = join_path(
-        #     path_config, rel_shared_path)
-        # check_config_path(shared_path_config_path)
     except IOError:
         abort(403, PATH_ERROR)
     if reuse is not None:

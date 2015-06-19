@@ -263,12 +263,9 @@ def get_files(path):
 
 
 def protect_path(path, path_type='files'):
-    if path_type == 'files':
-        permitted = permitted_files_path()
-    elif path_type == 'config':
-        permitted = permitted_config_path()
-    elif path_type == 'shares':
-        permitted = permitted_shares_path()
+    f = type_to_path('files')
+    if f is not None:
+        permitted = f()
     elif path_type.endswith('shares'):
         permitted = join_path(root_dir, path_type)
     try:
