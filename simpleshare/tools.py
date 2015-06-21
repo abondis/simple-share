@@ -52,26 +52,6 @@ def random_generator(size=4, chars=string.ascii_letters + string.digits):
 def get_real_path(restrict=permitted_path, path=None):
     """Normalize a path and returns one relative to the permitted
     `files_path`
-
-    Asking for 'tmp' should give us a path in our permitted folder
-    >>> get_real_path('/my/folder', 'tmp')
-    '/my/folder/tmp'
-
-    As should asking for 'blah/../tmp' should work
-    >>> get_real_path('/my/folder', 'blah/../tmp')
-    '/my/folder/tmp'
-
-    Asking for '/tmp' should fail
-    >>> get_real_path('/my/folder', '/tmp')
-    Traceback (most recent call last):
-    ...
-    IOError: /tmp doesn't exist
-
-    Same if we ask for '../../../../tmp'
-    >>> get_real_path('/my/folder', '/tmp')
-    Traceback (most recent call last):
-    ...
-    IOError: /tmp doesn't exist
     """
     path = join_path(restrict, path)
     path = abspath(path)

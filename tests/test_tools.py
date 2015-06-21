@@ -1,4 +1,22 @@
 from simpleshare import tools as t
+from os import makedirs, remove, rmdir
+from mock import patch
+
+
+def prep_folder():
+    makedirs('/tmp/test/folder')
+    with open('/tmp/test/file', 'w') as f:
+        f.write('a')
+
+
+def del_folder():
+    rmdir('/tmp/test/folder')
+    remove('/tmp/test/file')
+    rmdir('/tmp/test')
+try:
+    del_folder()
+except:
+    pass
 
 
 def test_nice_size():
@@ -20,13 +38,40 @@ def test_random_generator():
 
 
 def test_get_real_path():
-    """I want to get an absolute, cleaned path that is really inside the 'permitted' path"""
-    assert False
+    """I want to get an absolute, cleaned path that is really inside the
+    'permitted' path"""
+
+    # Asking for 'tmp' should give us a path in our permitted folder
+    r = t.get_real_path('/my/folder', 'tmp')
+    assert r == '/my/folder/tmp'
+
+    # As should asking for 'blah/../tmp' should work
+    r = t.get_real_path('/my/folder', 'blah/../tmp')
+    assert r == '/my/folder/tmp'
+
+    # Asking for '/tmp' should fail
+    try:
+        t.get_real_path('/my/folder', '/tmp')
+        assert False
+    except IOError as e:
+        assert e.message == "/tmp doesn't exist"
+
+    # Same if we ask for '../../../../tmp'
+    try:
+        t.get_real_path('/my/folder', '../../../tmp')
+        assert False
+    except IOError as e:
+        assert e.message == "/tmp doesn't exist"
 
 
-def test_prep_ls():
+@patch('simpleshare.tools.aaa')
+def test_prep_ls(aaa):
     """I want to get a simple list of files and folders separated by type"""
-    assert False
+    aaa.user_is_anonymous = True
+    prep_folder()
+    ls = t.prep_ls('/tmp/test', details=False)
+    assert ls == {'files': ['file'], 'dirs': ['folder']}
+    del_folder()
 
 
 def test_prep_ls_details():
