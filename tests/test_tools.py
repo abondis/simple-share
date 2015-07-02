@@ -1,22 +1,24 @@
 from simpleshare import tools as t
-from os import makedirs, remove, rmdir
+from os import makedirs, path
+from shutil import rmtree
 from mock import patch
 
 
-def prep_folder():
+def prep_folder(conf=False):
+    try:
+        rmtree('/tmp/test')
+    except:
+        pass
+    if conf:
+        makedirs('/tmp/test/usertest/config/testhash#')
+        return
     makedirs('/tmp/test/folder')
     with open('/tmp/test/file', 'w') as f:
         f.write('a')
 
 
-def del_folder():
-    rmdir('/tmp/test/folder')
-    remove('/tmp/test/file')
-    rmdir('/tmp/test')
-try:
-    del_folder()
-except:
-    pass
+def del_folder(conf=False):
+    rmtree('/tmp/test')
 
 
 def test_nice_size():
@@ -70,31 +72,53 @@ def test_prep_ls(aaa):
     aaa.user_is_anonymous = True
     prep_folder()
     ls = t.prep_ls('/tmp/test', details=False)
-    assert ls == {'files': ['file'], 'dirs': ['folder']}
     del_folder()
+    assert ls == {'files': ['file'], 'dirs': ['folder']}
 
 
-def test_prep_ls_details():
+@patch('simpleshare.tools.aaa')
+def test_prep_ls_details(aaa):
     """I want to get a list of files and folders separated by type
     with details about the folder:
     - name, size, mtime
     """
-    assert False
+    aaa.user_is_anonymous = True
+    prep_folder()
+    ls = t.prep_ls('/tmp/test', details=True)
+    del_folder()
+    assert {'name', 'size', 'mtime'} == set(ls['dirs'][0].keys())
+    assert {'name', 'size', 'mtime'} == set(ls['files'][0].keys())
 
 
-def test_list_dir_folder():
+@patch('simpleshare.tools.aaa')
+def test_list_dir_folder(aaa):
     """Get a list of files in a specific folder"""
-    assert False
+    aaa.user_is_anonymous = True
+    prep_folder()
+    ls = t.list_dir('/tmp/test')
+    del_folder()
+    assert {'name', 'size', 'mtime'} == set(ls['dirs'][0].keys())
+    assert {'name', 'size', 'mtime'} == set(ls['files'][0].keys())
 
 
-def test_list_dir_file():
+@patch('simpleshare.tools.static_file')
+def test_list_dir_file(static_file):
     """Listing a 'file' gives us it's content or path when not in debug"""
-    assert False
+    prep_folder()
+    t.list_dir('/tmp/test/file')
+    del_folder()
+    assert static_file.called
 
 
-def test_get_config():
+@patch('simpleshare.tools.aaa')
+def test_get_config(aaa):
     """Query a key in a specific path"""
-    assert False
+    aaa.current_user.username = 'usertest'
+    t.root_dir = '/tmp/test'
+    prep_folder(True)
+    val = t.get_config('testhash', 'public')
+    assert val is True
+    del_folder(True)
 
 
 def test_get_uid_from_path():
@@ -142,10 +166,19 @@ def test_get_files():
     assert False
 
 
-def test_protect_path():
+@patch('simpleshare.tools.aaa')
+@patch('simpleshare.tools.abort')
+def test_protect_path(abort, aaa):
     """I want to get a clean safe path inside one of the configured
     authorized paths"""
-    assert False
+    aaa.current_user.username = 'usertest'
+    t.root_dir = '/tmp/test/files'
+    val = t.protect_path('some/rel/path')
+    assert val == path.join(t.root_dir, 'usertest', 'files', 'some/rel/path')
+    val = t.protect_path('some/rel/path', 'config')
+    assert val == path.join(t.root_dir, 'usertest', 'config', 'some/rel/path')
+    val = t.protect_path('/some/rel/path', 'config')
+    abort.assert_called_with(403)
 
 
 def test_relist_parent_folder():

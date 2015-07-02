@@ -113,17 +113,15 @@ def list_dir(path):
 def get_config(rel_path, key, subdir='config'):
     """Get configuration from folder/path
     """
-    key = key + "K"
+    Ukey = key + "K"
     Upath = prep_upath(rel_path)
+    print(Upath)
     config_path = protect_path(Upath, subdir)
-    if not subdir.endswith('/shares'):
-        path = join_path(config_path, subdir)
-    else:
-        path = config_path
+    path = config_path
+    if not exists(path) or not isdir(path):
+        raise IOError("The key doesn't exist")
+    path = join_path(path, Ukey)
     print(path)
-    if not exists(path) and not isdir(path):
-        raise IOError
-    path = join_path(path, key)
     if not exists(path):
         return defaults[key]
     else:
@@ -243,16 +241,17 @@ def get_files(path):
 
 
 def protect_path(path, path_type='files'):
-    f = type_to_path('files')
+    """Get a path based on permitted paths"""
+    f = type_to_path.get(path_type)
     if f is not None:
         permitted = f()
     elif path_type.endswith('shares'):
         permitted = join_path(root_dir, path_type)
     try:
         real_path = get_real_path(permitted, path)
+        return real_path
     except IOError:
         abort(403)
-    return real_path
 
 
 def relist_parent_folder(path):
