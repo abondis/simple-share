@@ -142,14 +142,11 @@ def get_uid_from_path(path):
     """
     # get path relative to the permitted path where we upload files
     rel_path = relpath(path, permitted_files_path())
-    print(path)
-    print(permitted_files_path())
-    print(rel_path)
     # get a path in the form of <path>#/<path#>...
     Upath = prep_upath(rel_path)
     # get the protected path in the configuration folder
     config_path = protect_path(Upath, 'config')
-    print(config_path)
+    print(("config path is", config_path))
     if isdir(config_path):
         shares_names = prep_ls(config_path, False)['files']
         sharing_uids = [x[:-1] for x in shares_names]

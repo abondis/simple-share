@@ -14,6 +14,8 @@ def prep_folder(conf=False):
         pass
     if conf:
         makedirs('/tmp/test/usertest/config/testhash#')
+        with open('/tmp/test/usertest/config/testhash#/XYZ22K', 'w') as f:
+            f.write('a')
         return
     makedirs('/tmp/test/folder')
     with open('/tmp/test/file', 'w') as f:
@@ -133,7 +135,7 @@ def test_get_uid_from_path(aaa):
     t.root_dir = '/tmp/test'
     prep_folder(True)
     r = t.get_uid_from_path('/tmp/test/usertest/files/testhash')
-    assert r == 'unsun'
+    assert r == ['XYZ22']
 
 
 def test_get_path_from_uid():
