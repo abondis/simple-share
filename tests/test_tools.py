@@ -5,6 +5,9 @@ from mock import patch
 
 
 def prep_folder(conf=False):
+    """prepare a temporary folder
+    conf: is it a configuration folder ? else it is just a normal folder
+    """
     try:
         rmtree('/tmp/test')
     except:
@@ -121,9 +124,16 @@ def test_get_config(aaa):
     del_folder(True)
 
 
-def test_get_uid_from_path():
-    """Get a list of sharing UID for a specifi path"""
-    assert False
+@patch('simpleshare.tools.aaa')
+def test_get_uid_from_path(aaa):
+    """Get a list of sharing UID associated to a specific path
+    it is called with a path relative to the configuration
+    """
+    aaa.current_user.username = 'usertest'
+    t.root_dir = '/tmp/test'
+    prep_folder(True)
+    r = t.get_uid_from_path('/tmp/test/usertest/files/testhash')
+    assert r == 'unsun'
 
 
 def test_get_path_from_uid():

@@ -64,6 +64,11 @@ def get_real_path(restrict=permitted_path, path=None):
 
 
 def prep_ls(path, details=True):
+    """prepares a list of files and folders ready for the API.
+    if a user is connected, we can see the sharing IDs associated to each.
+    path: absolute path to list
+    details: see files and folders informations
+    """
     ls = {'dirs': [], 'files': []}
     _ls = listdir(path)
     if aaa.user_is_anonymous:
@@ -131,8 +136,18 @@ def get_config(rel_path, key, subdir='config'):
 
 
 def get_uid_from_path(path):
+    """
+    Get a list of sharing IDs associated to a path.
+    path: path relative to a users folder
+    """
+    # get path relative to the permitted path where we upload files
     rel_path = relpath(path, permitted_files_path())
+    print(path)
+    print(permitted_files_path())
+    print(rel_path)
+    # get a path in the form of <path>#/<path#>...
     Upath = prep_upath(rel_path)
+    # get the protected path in the configuration folder
     config_path = protect_path(Upath, 'config')
     print(config_path)
     if isdir(config_path):
