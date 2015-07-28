@@ -123,10 +123,10 @@ def get_config(rel_path, key, subdir='config'):
     print(Upath)
     config_path = protect_path(Upath, subdir)
     path = config_path
+    print(path)
     if not exists(path) or not isdir(path):
         raise IOError("The key doesn't exist")
     path = join_path(path, Ukey)
-    print(path)
     if not exists(path):
         return defaults[key]
     else:
@@ -163,21 +163,24 @@ def delete_path(real_path):
     if exists(real_path):
         if isfile(real_path):
             if DEBUG:
-                print("deleting file {}".format(real_path))
+                return {real_path: 'deleted'}
             else:
                 remove(real_path)
         elif isdir(real_path):
             if DEBUG:
-                print("deleting folder {}".format(real_path))
+                return {real_path: 'deleted'}
             else:
                 rmtree(real_path)
 
 
 def check_config_path(rel_path, subdir='config'):
-    """prepares config folder and check everything is fine"""
+    """prepares config folder and check everything is fine
+    rel_path: path relative to the 'subdir'
+    """
     Upath = prep_upath(rel_path)
     # print("going to try to create {}".format(Upath))
     config_path = protect_path(Upath, subdir)
+    print(config_path)
     # print("in {}".format(config_path))
     try:
         return create_path(config_path)
@@ -186,12 +189,13 @@ def check_config_path(rel_path, subdir='config'):
 
 
 def create_path(path):
-    # print("creating path {}".format(path))
+    """prepares config folder and check everything is fine
+    returns True if created False if not. Raises an exception if it's a file
+    """
     if exists(path):
         if not isdir(path):
             raise IOError("Configuration path is not accessible")
-        else:
-            return False
+        return False
     else:
         makedirs(path)
         return True

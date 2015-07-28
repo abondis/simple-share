@@ -1,7 +1,7 @@
 from simpleshare import tools as t
 from os import makedirs, path
 from shutil import rmtree
-from mock import patch
+from mock import patch, Mock
 
 
 def prep_folder(conf=False):
@@ -13,9 +13,14 @@ def prep_folder(conf=False):
     except:
         pass
     if conf:
-        makedirs('/tmp/test/usertest/config/testhash#')
+        makedirs('/tmp/test/usertest/config/testhash#/XYZ22#')
+        makedirs('/tmp/test/usertest/shares/XYZ22#')
         with open('/tmp/test/usertest/config/testhash#/XYZ22K', 'w') as f:
             f.write('a')
+        with open(
+                '/tmp/test/usertest/shares/XYZ22#/pathK',
+                'w') as f:
+            f.write('/test/path')
         return
     makedirs('/tmp/test/folder')
     with open('/tmp/test/file', 'w') as f:
@@ -138,29 +143,68 @@ def test_get_uid_from_path(aaa):
     assert r == ['XYZ22']
 
 
-def test_get_path_from_uid():
+@patch('simpleshare.tools.abort')
+def test_get_path_from_uid(abort):
     """Find the path shared from a specific sharing UID"""
-    assert False
+    t.root_dir = '/tmp/test'
+    prep_folder(True)
+    r = t.get_path_from_uid('usertest', 'XYZ22')
+    assert r == '/test/path'
+    try:
+        r = t.get_path_from_uid('../../../../../../../../etc', 'passwd')
+        assert False
+    except:
+        abort.assert_called_with(403)
+    del_folder(True)
 
 
 def test_delete_path():
     """Delete a file or a folder"""
-    assert False
+    t.DEBUG = True
+    prep_folder()
+    r = t.delete_path('/tmp/test')
+    assert r == {'/tmp/test': 'deleted'}
+    del_folder()
 
 
-def test_check_config_path():
-    """prepares config folder and check everything is fine"""
-    assert False
+@patch('simpleshare.tools.aaa')
+def test_check_config_path(aaa):
+    """prepares config folder and check everything is fine
+    returns True if created False if not. Raises an exception if it's a file
+    """
+    t.root_dir = '/tmp/test'
+    aaa.current_user.username = 'usertest'
+    prep_folder(True)
+    r = t.check_config_path('testhash')
+    assert r is False
+    r = t.check_config_path('nonexistent')
+    assert r is True
+    del_folder(True)
 
 
 def test_create_path():
     """Create a folder if it doesn't exist"""
-    assert False
+    prep_folder(True)
+    r = t.create_path('/tmp/test/blahblah')
+    assert r is True
+    try:
+        t.create_path('/tmp/test/usertest/config/testhash#/XYZ22K')
+        assert False, "Creating a path on a file should fail"
+    except Exception as e:
+        assert e.message == "Configuration path is not accessible"
+    del_folder(True)
 
 
-def test_create_random_folder():
+@patch('simpleshare.tools.aaa')
+def test_create_random_folder(aaa):
     """Get a sharing UID that doesn't already exist"""
-    assert False
+    prep_folder(True)
+    t.root_dir = '/tmp/test'
+    aaa.current_user.username = 'usertest'
+    t.random_generator = Mock(side_effect=['XYZ22', 'ABC123'])
+    x, y = t.create_random_folder()
+    assert t.random_generator.call_count == 2
+    assert x == 'ABC123'
 
 
 def test_prep_upath():
