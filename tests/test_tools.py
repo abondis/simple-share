@@ -209,12 +209,26 @@ def test_create_random_folder(aaa):
 
 def test_prep_upath():
     """I want to get a Unique path for a specific path in the KV store"""
-    assert False
+    r = t.prep_upath('relative/path')
+    assert r == 'relative#/path#/'
+    r = t.prep_upath('/relative/path')
+    assert r == 'relative#/path#/'
+    r = t.prep_upath('relative/path/')
+    assert r == 'relative#/path#/'
 
 
-def test_configure():
+@patch('simpleshare.tools.aaa')
+def test_configure(aaa):
     """Configure a Path/Key with a value"""
-    assert False
+    t.root_dir = '/tmp/test'
+    aaa.current_user.username = 'usertest'
+    t.configure('some/path', 'somekey', 'somevalue')
+    assert path.isdir('/tmp/test/usertest/config/some#')
+    assert path.isdir('/tmp/test/usertest/config/some#/path#')
+    assert path.isfile('/tmp/test/usertest/config/some#/path#/somekeyK')
+    assert open(
+        '/tmp/test/usertest/config/some#/path#/somekeyK',
+        'r').read() == 'somevalue'
 
 
 def test_get_files():
