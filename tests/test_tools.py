@@ -231,9 +231,15 @@ def test_configure(aaa):
         'r').read() == 'somevalue'
 
 
-def test_get_files():
+@patch('simpleshare.tools.aaa')
+def test_get_files(aaa):
     """Get only the file list from the listing of a path"""
-    assert False
+    aaa.user_is_anonymous = True
+    prep_folder()
+    ls = t.get_files('/tmp/test')
+    del_folder()
+    assert len(ls) == 1
+    assert ls[0]['name'] == 'file'
 
 
 @patch('simpleshare.tools.aaa')
@@ -251,13 +257,13 @@ def test_protect_path(abort, aaa):
     abort.assert_called_with(403)
 
 
-def test_relist_parent_folder():
+@patch('simpleshare.tools.aaa')
+def test_relist_parent_folder(aaa):
     """Get a list of files and folders in the parent of the specified path"""
-    assert False
-
-
-def test_validate_path():
-    """Check if a path exists in the config, to avoid creating a folder
-    with the same name as the path"""
-    # Might not be needed anymore
-    assert False
+    aaa.user_is_anonymous = True
+    t.root_dir = '/tmp/test'
+    prep_folder()
+    r = t.relist_parent_folder('/tmp/test/blah')
+    del_folder()
+    assert r['dirs'][0]['name'] == 'folder'
+    assert r['files'][0]['name'] == 'file'

@@ -285,12 +285,3 @@ def relist_parent_folder(path):
         ls['dirs'].append({'name': 'edited something'})
         ls['files'].append({'name': 'edited {}'.format(path)})
     return ls
-
-
-def validate_path(path):
-    """Check if a path exists in config
-    which means the path has been shared with an identicall UID"""
-    abs_config_path = protect_path(path, 'config')
-    if exists(abs_config_path) and isfile(abs_config_path):
-        return False
-    return True
