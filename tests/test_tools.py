@@ -76,23 +76,19 @@ def test_get_real_path():
         assert e.message == "/tmp doesn't exist"
 
 
-@patch('simpleshare.tools.aaa')
-def test_prep_ls(aaa):
+def test_prep_ls():
     """I want to get a simple list of files and folders separated by type"""
-    aaa.user_is_anonymous = True
     prep_folder()
     ls = t.prep_ls('/tmp/test', details=False)
     del_folder()
     assert ls == {'files': ['file'], 'dirs': ['folder']}
 
 
-@patch('simpleshare.tools.aaa')
-def test_prep_ls_details(aaa):
+def test_prep_ls_details():
     """I want to get a list of files and folders separated by type
     with details about the folder:
     - name, size, mtime
     """
-    aaa.user_is_anonymous = True
     prep_folder()
     ls = t.prep_ls('/tmp/test', details=True)
     del_folder()
@@ -100,10 +96,8 @@ def test_prep_ls_details(aaa):
     assert {'name', 'size', 'mtime'} == set(ls['files'][0].keys())
 
 
-@patch('simpleshare.tools.aaa')
-def test_list_dir_folder(aaa):
+def test_list_dir_folder():
     """Get a list of files in a specific folder"""
-    aaa.user_is_anonymous = True
     prep_folder()
     ls = t.list_dir('/tmp/test')
     del_folder()
@@ -120,31 +114,17 @@ def test_list_dir_file(static_file):
     assert static_file.called
 
 
-@patch('simpleshare.tools.aaa')
-def test_get_config(aaa):
-    """Query a key in a specific path"""
-    aaa.current_user.username = 'usertest'
-    t.root_dir = '/tmp/test'
-    prep_folder(True)
-    val = t.get_config('testhash', 'public')
-    assert val is True
-    del_folder(True)
-
-
-@patch('simpleshare.tools.aaa')
-def test_get_uid_from_path(aaa):
+def test_get_uid_from_path():
     """Get a list of sharing UID associated to a specific path
     it is called with a path relative to the configuration
     """
-    aaa.current_user.username = 'usertest'
     t.root_dir = '/tmp/test'
     prep_folder(True)
     r = t.get_uid_from_path('/tmp/test/usertest/files/testhash')
     assert r == ['XYZ22']
 
 
-@patch('simpleshare.tools.abort')
-def test_get_path_from_uid(abort):
+def test_get_path_from_uid():
     """Find the path shared from a specific sharing UID"""
     t.root_dir = '/tmp/test'
     prep_folder(True)
@@ -154,7 +134,7 @@ def test_get_path_from_uid(abort):
         r = t.get_path_from_uid('../../../../../../../../etc', 'passwd')
         assert False
     except:
-        abort.assert_called_with(403)
+        pass
     del_folder(True)
 
 
@@ -165,21 +145,6 @@ def test_delete_path():
     r = t.delete_path('/tmp/test')
     assert r == {'/tmp/test': 'deleted'}
     del_folder()
-
-
-@patch('simpleshare.tools.aaa')
-def test_check_config_path(aaa):
-    """prepares config folder and check everything is fine
-    returns True if created False if not. Raises an exception if it's a file
-    """
-    t.root_dir = '/tmp/test'
-    aaa.current_user.username = 'usertest'
-    prep_folder(True)
-    r = t.check_config_path('testhash')
-    assert r is False
-    r = t.check_config_path('nonexistent')
-    assert r is True
-    del_folder(True)
 
 
 def test_create_path():
@@ -195,46 +160,18 @@ def test_create_path():
     del_folder(True)
 
 
-@patch('simpleshare.tools.aaa')
-def test_create_random_folder(aaa):
+def test_create_random_folder():
     """Get a sharing UID that doesn't already exist"""
     prep_folder(True)
     t.root_dir = '/tmp/test'
-    aaa.current_user.username = 'usertest'
     t.random_generator = Mock(side_effect=['XYZ22', 'ABC123'])
     x, y = t.create_random_folder()
     assert t.random_generator.call_count == 2
     assert x == 'ABC123'
 
 
-def test_prep_upath():
-    """I want to get a Unique path for a specific path in the KV store"""
-    r = t.prep_upath('relative/path')
-    assert r == 'relative#/path#/'
-    r = t.prep_upath('/relative/path')
-    assert r == 'relative#/path#/'
-    r = t.prep_upath('relative/path/')
-    assert r == 'relative#/path#/'
-
-
-@patch('simpleshare.tools.aaa')
-def test_configure(aaa):
-    """Configure a Path/Key with a value"""
-    t.root_dir = '/tmp/test'
-    aaa.current_user.username = 'usertest'
-    t.configure('some/path', 'somekey', 'somevalue')
-    assert path.isdir('/tmp/test/usertest/config/some#')
-    assert path.isdir('/tmp/test/usertest/config/some#/path#')
-    assert path.isfile('/tmp/test/usertest/config/some#/path#/somekeyK')
-    assert open(
-        '/tmp/test/usertest/config/some#/path#/somekeyK',
-        'r').read() == 'somevalue'
-
-
-@patch('simpleshare.tools.aaa')
-def test_get_files(aaa):
+def test_get_files():
     """Get only the file list from the listing of a path"""
-    aaa.user_is_anonymous = True
     prep_folder()
     ls = t.get_files('/tmp/test')
     del_folder()
@@ -242,25 +179,19 @@ def test_get_files(aaa):
     assert ls[0]['name'] == 'file'
 
 
-@patch('simpleshare.tools.aaa')
-@patch('simpleshare.tools.abort')
-def test_protect_path(abort, aaa):
+def test_protect_path():
     """I want to get a clean safe path inside one of the configured
     authorized paths"""
-    aaa.current_user.username = 'usertest'
     t.root_dir = '/tmp/test/files'
     val = t.protect_path('some/rel/path')
     assert val == path.join(t.root_dir, 'usertest', 'files', 'some/rel/path')
     val = t.protect_path('some/rel/path', 'config')
     assert val == path.join(t.root_dir, 'usertest', 'config', 'some/rel/path')
     val = t.protect_path('/some/rel/path', 'config')
-    abort.assert_called_with(403)
 
 
-@patch('simpleshare.tools.aaa')
-def test_relist_parent_folder(aaa):
+def test_relist_parent_folder():
     """Get a list of files and folders in the parent of the specified path"""
-    aaa.user_is_anonymous = True
     t.root_dir = '/tmp/test'
     prep_folder()
     r = t.relist_parent_folder('/tmp/test/blah')

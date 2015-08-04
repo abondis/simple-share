@@ -7,12 +7,13 @@ from simpleshare.tools import get_real_path
 from simpleshare.tools import list_dir, get_path_from_uid
 from simpleshare.tools import delete_path, get_config
 from simpleshare.tools import create_path, create_random_folder
-from simpleshare.tools import configure, root_dir
+from simpleshare.tools import root_dir
 from simpleshare.tools import permitted_files_path, protect_path
 from simpleshare.tools import permitted_config_path
 from simpleshare.tools import permitted_shares_path
 from simpleshare.tools import relist_parent_folder
 from simpleshare.tools import PATH_ERROR
+from keyval import configure
 from cork import Cork
 
 aaa = Cork('cork_conf')
