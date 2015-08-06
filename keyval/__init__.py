@@ -1,43 +1,57 @@
 from os.path import isdir, exists
 from os.path import join as join_path
-from os.path import sep
+from os.path import sep, abspath, realpath
+from os import makedirs
 
 DEBUG = True
 PATH_ERROR = "The path is not available or doesn't exist"
 dir_sep = "#" + sep
+try:
+    from settings import defaults
+except:
+    defaults = {}
 
 
-def get_config(rel_path, key, subdir='config'):
+def get_real_path(jail, path=None):
+    """Normalize a path and returns one relative to the permitted
+    `files_path`
+    """
+    path = join_path(jail, path)
+    path = abspath(path)
+    # follow symlinks ????
+    path = realpath(path)
+    if path.startswith(jail):
+        return path
+    else:
+        raise IOError("{} doesn't exist".format(path))
+
+
+def get_config(root_dir, hash_path, key):
     """Get configuration from folder/path
     """
     Ukey = key + "K"
-    Upath = prep_upath(rel_path)
-    print(Upath)
-    config_path = protect_path(Upath, subdir)
-    path = config_path
-    print(path)
-    if not exists(path) or not isdir(path):
+    Upath = prep_upath(hash_path)
+    full_path = get_real_path(root_dir, Upath)
+    if not exists(full_path) or not isdir(full_path):
         raise IOError("The key doesn't exist")
-    path = join_path(path, Ukey)
+    path = join_path(full_path, Ukey)
     if not exists(path):
-        return defaults[key]
+        return defaults.get(key)
     else:
         with open(path, 'r') as f:
             value = f.read()
         return value
 
 
-def check_config_path(rel_path, subdir='config'):
+def check_config_path(root_dir, hash_path):
     """prepares config folder and check everything is fine
     rel_path: path relative to the 'subdir'
     """
-    Upath = prep_upath(rel_path)
-    # print("going to try to create {}".format(Upath))
-    config_path = protect_path(Upath, subdir)
-    print(config_path)
-    # print("in {}".format(config_path))
+    Upath = prep_upath(hash_path)
+    full_path = get_real_path(root_dir, Upath)
+    print(full_path)
     try:
-        return create_path(config_path)
+        return create_path(full_path)
     except IOError:
         raise
 
@@ -58,6 +72,8 @@ def create_path(path):
 def prep_upath(rel_path):
     # print("&" * 80)
     # unique path to avoid key vs path collision
+    if rel_path is None:
+        return ''
     if rel_path.startswith(sep):
         rel_path = rel_path[1:]
     if not rel_path.endswith(sep):
@@ -71,7 +87,7 @@ def prep_upath(rel_path):
     return Upath
 
 
-def configure(rel_path, key, value=None, subdir='config'):
+def configure(root_path, hash_path, key, value=None):
     """Configure things using folders and files
     value == None: keep default or don't modify the file
     path: /a/b/c/config/some#/path#/
@@ -79,17 +95,13 @@ def configure(rel_path, key, value=None, subdir='config'):
     """
     # absolute config path
     key = key + "K"
-    Upath = prep_upath(rel_path)
-    config_path = protect_path(Upath, subdir)
-    # print("*" * 80)
-    # print("got {} {} {} {}".format(rel_path, key, value, subdir))
-    # print(config_path)
-    create_path(config_path)
+    Upath = prep_upath(hash_path)
+    full_path = get_real_path(root_path, Upath)
+    create_path(full_path)
     if value is None:
-        return config_path
-    path = join_path(config_path, key)
-    # print(path)
-    # print("*" * 80)
+        return full_path
+    path = join_path(full_path, key)
+    print(path)
     with open(path, 'w') as f:
         f.write(value)
 
