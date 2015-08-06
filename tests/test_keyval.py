@@ -30,6 +30,19 @@ def del_folder(conf=False):
     rmtree('/tmp/test')
 
 
+def test_create_path():
+    """Create a folder if it doesn't exist"""
+    prep_folder(True)
+    r = t.create_path('/tmp/test/blahblah')
+    assert r is True
+    try:
+        t.create_path('/tmp/test/usertest/config/testhash#/XYZ22K')
+        assert False, "Creating a path on a file should fail"
+    except Exception as e:
+        assert e.message == "Configuration path is not accessible"
+    del_folder(True)
+
+
 def test_get_real_path():
     """I want to get an absolute, cleaned path that is really inside the
     'permitted' path"""
