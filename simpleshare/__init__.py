@@ -3,17 +3,16 @@ from bottle import request
 from bottle import abort, template, static_file
 from os.path import join as join_path
 from os.path import relpath, basename, dirname
-from simpleshare.tools import get_real_path
 from simpleshare.tools import list_dir, get_path_from_uid
 from simpleshare.tools import delete_path, get_config
-from simpleshare.tools import create_path, create_random_folder
+from simpleshare.tools import create_random_folder
 from simpleshare.tools import root_dir
 from simpleshare.tools import permitted_files_path, protect_path
 from simpleshare.tools import permitted_config_path
 from simpleshare.tools import permitted_shares_path
 from simpleshare.tools import relist_parent_folder
 from simpleshare.tools import PATH_ERROR
-from keyval import configure
+from keyval import configure, create_path, get_real_path
 from cork import Cork
 
 aaa = Cork('cork_conf')

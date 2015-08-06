@@ -4,7 +4,6 @@ from os.path import sep, abspath, realpath
 from os import makedirs
 
 DEBUG = True
-PATH_ERROR = "The path is not available or doesn't exist"
 dir_sep = "#" + sep
 try:
     from settings import defaults

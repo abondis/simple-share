@@ -49,33 +49,6 @@ def test_random_generator():
     assert len(results_set) > 9990
 
 
-def test_get_real_path():
-    """I want to get an absolute, cleaned path that is really inside the
-    'permitted' path"""
-
-    # Asking for 'tmp' should give us a path in our permitted folder
-    r = t.get_real_path('/my/folder', 'tmp')
-    assert r == '/my/folder/tmp'
-
-    # As should asking for 'blah/../tmp' should work
-    r = t.get_real_path('/my/folder', 'blah/../tmp')
-    assert r == '/my/folder/tmp'
-
-    # Asking for '/tmp' should fail
-    try:
-        t.get_real_path('/my/folder', '/tmp')
-        assert False
-    except IOError as e:
-        assert e.message == "/tmp doesn't exist"
-
-    # Same if we ask for '../../../../tmp'
-    try:
-        t.get_real_path('/my/folder', '../../../tmp')
-        assert False
-    except IOError as e:
-        assert e.message == "/tmp doesn't exist"
-
-
 def test_prep_ls():
     """I want to get a simple list of files and folders separated by type"""
     prep_folder()
@@ -145,19 +118,6 @@ def test_delete_path():
     r = t.delete_path('/tmp/test')
     assert r == {'/tmp/test': 'deleted'}
     del_folder()
-
-
-def test_create_path():
-    """Create a folder if it doesn't exist"""
-    prep_folder(True)
-    r = t.create_path('/tmp/test/blahblah')
-    assert r is True
-    try:
-        t.create_path('/tmp/test/usertest/config/testhash#/XYZ22K')
-        assert False, "Creating a path on a file should fail"
-    except Exception as e:
-        assert e.message == "Configuration path is not accessible"
-    del_folder(True)
 
 
 def test_create_random_folder():

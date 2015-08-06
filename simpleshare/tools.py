@@ -36,6 +36,7 @@ defaults = {
     'expires': False
     }
 sizes = ['B', 'KiB', 'MiB', 'GiB', 'TiB']
+PATH_ERROR = "The path is not available or doesn't exist"
 
 
 def nice_size(size):
@@ -46,20 +47,6 @@ def nice_size(size):
 
 def random_generator(size=4, chars=string.ascii_letters + string.digits):
     return ''.join(random.choice(chars) for x in range(size))
-
-
-def get_real_path(jail, path=None):
-    """Normalize a path and returns one relative to the permitted
-    `files_path`
-    """
-    path = join_path(jail, path)
-    path = abspath(path)
-    # follow symlinks ????
-    path = realpath(path)
-    if path.startswith(jail):
-        return path
-    else:
-        raise IOError("{} doesn't exist".format(path))
 
 
 def prep_ls(path, details=True):
