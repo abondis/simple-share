@@ -3,7 +3,6 @@ from os.path import join as join_path
 from os.path import sep, abspath, realpath
 from os import makedirs
 
-DEBUG = True
 dir_sep = "#" + sep
 try:
     from settings import defaults

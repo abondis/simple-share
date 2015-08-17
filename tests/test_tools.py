@@ -30,6 +30,12 @@ def prep_folder(conf=False):
 def del_folder(conf=False):
     rmtree('/tmp/test')
 
+    def anon():
+        aaa.user_is_anonymous = True
+
+    def setuser():
+        aaa.current_user = 'usertest'
+
 
 def test_nice_size():
     """Depending on the size in bytes of a file, I want it's size in B,
@@ -49,29 +55,35 @@ def test_random_generator():
     assert len(results_set) > 9990
 
 
-def test_prep_ls():
+@patch('simpleshare.tools.aaa')
+def test_prep_ls(aaa):
     """I want to get a simple list of files and folders separated by type"""
     prep_folder()
+    aaa.user_is_anonymous = True
     ls = t.prep_ls('/tmp/test', details=False)
     del_folder()
     assert ls == {'files': ['file'], 'dirs': ['folder']}
 
 
-def test_prep_ls_details():
+@patch('simpleshare.tools.aaa')
+def test_prep_ls_details(aaa):
     """I want to get a list of files and folders separated by type
     with details about the folder:
     - name, size, mtime
     """
     prep_folder()
+    aaa.user_is_anonymous = True
     ls = t.prep_ls('/tmp/test', details=True)
     del_folder()
     assert {'name', 'size', 'mtime'} == set(ls['dirs'][0].keys())
     assert {'name', 'size', 'mtime'} == set(ls['files'][0].keys())
 
 
-def test_list_dir_folder():
+@patch('simpleshare.tools.aaa')
+def test_list_dir_folder(aaa):
     """Get a list of files in a specific folder"""
     prep_folder()
+    aaa.user_is_anonymous = True
     ls = t.list_dir('/tmp/test')
     del_folder()
     assert {'name', 'size', 'mtime'} == set(ls['dirs'][0].keys())
@@ -87,19 +99,24 @@ def test_list_dir_file(static_file):
     assert static_file.called
 
 
-def test_get_uid_from_path():
+@patch('simpleshare.tools.aaa')
+def test_get_uid_from_path(aaa):
     """Get a list of sharing UID associated to a specific path
     it is called with a path relative to the configuration
     """
     t.root_dir = '/tmp/test'
+    aaa.current_user.username = 'usertest'
     prep_folder(True)
     r = t.get_uid_from_path('/tmp/test/usertest/files/testhash')
     assert r == ['XYZ22']
 
 
-def test_get_path_from_uid():
+@patch('simpleshare.tools.aaa')
+def test_get_path_from_uid(aaa):
     """Find the path shared from a specific sharing UID"""
     t.root_dir = '/tmp/test'
+    # aaa.current_user.username = 'usertest'
+    aaa.user_is_anonymous = True
     prep_folder(True)
     r = t.get_path_from_uid('usertest', 'XYZ22')
     assert r == '/test/path'
@@ -120,9 +137,11 @@ def test_delete_path():
     del_folder()
 
 
-def test_create_random_folder():
+@patch('simpleshare.tools.aaa')
+def test_create_random_folder(aaa):
     """Get a sharing UID that doesn't already exist"""
     prep_folder(True)
+    aaa.current_user.username = 'usertest'
     t.root_dir = '/tmp/test'
     t.random_generator = Mock(side_effect=['XYZ22', 'ABC123'])
     x, y = t.create_random_folder()
@@ -130,29 +149,42 @@ def test_create_random_folder():
     assert x == 'ABC123'
 
 
-def test_get_files():
+@patch('simpleshare.tools.aaa')
+def test_get_files(aaa):
     """Get only the file list from the listing of a path"""
     prep_folder()
+    aaa.current_user.username = 'usertest'
     ls = t.get_files('/tmp/test')
     del_folder()
     assert len(ls) == 1
     assert ls[0]['name'] == 'file'
 
 
-def test_protect_path():
+@patch('simpleshare.tools.aaa')
+def test_protect_path(aaa):
     """I want to get a clean safe path inside one of the configured
     authorized paths"""
     t.root_dir = '/tmp/test/files'
+    aaa.current_user.username = 'usertest'
     val = t.protect_path('some/rel/path')
-    assert val == path.join(t.root_dir, 'usertest', 'files', 'some/rel/path')
+    assert (val == path.join(t.root_dir, 'usertest', 'files', 'some/rel/path'),
+            "We should get ...")
     val = t.protect_path('some/rel/path', 'config')
     assert val == path.join(t.root_dir, 'usertest', 'config', 'some/rel/path')
-    val = t.protect_path('/some/rel/path', 'config')
+    try:
+        val = t.protect_path('/some/rel/path', 'config')
+        assert (False,
+                "We shouldn't be allowed to acces an"
+                "absolute path outside of permitted scope")
+    except:
+        pass
 
 
-def test_relist_parent_folder():
+@patch('simpleshare.tools.aaa')
+def test_relist_parent_folder(aaa):
     """Get a list of files and folders in the parent of the specified path"""
     t.root_dir = '/tmp/test'
+    aaa.current_user = 'usertest'
     prep_folder()
     r = t.relist_parent_folder('/tmp/test/blah')
     del_folder()

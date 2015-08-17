@@ -8,10 +8,11 @@ from shutil import rmtree
 import string
 import random
 from bottle import abort, response, static_file
-from keyval import get_config
+from keyval import get_config, get_real_path, check_config_path, prep_upath
 
 aaa = Cork('cork_conf')
 root_dir = join_path(getcwd(), 'files')
+DEBUG = True
 
 files_path = 'files'
 config_path = 'config'
@@ -56,6 +57,10 @@ def prep_ls(path, details=True):
     details: see files and folders informations
     """
     ls = {'dirs': [], 'files': []}
+    if aaa.user_is_anonymous:
+        user = None
+    else:
+        user = aaa.current_user
     _ls = listdir(path)
     for p in _ls:
         ls_path = join_path(path, p)
@@ -118,7 +123,8 @@ def get_uid_from_path(path):
 
 def get_path_from_uid(user, uid):
     # config/user/shares/uid
-    return get_config(uid, 'path', '{}/shares'.format(user))
+    jail = protect_path('.', '{}/shares'.format(user))
+    return get_config(jail, uid, 'path')
 
 
 def delete_path(real_path):
@@ -134,10 +140,12 @@ def delete_path(real_path):
             else:
                 rmtree(real_path)
 
+
 def create_random_folder():
     count = 0
     ruid = random_generator()
-    while not check_config_path(ruid, 'shares') and count < 10:
+    jail = type_to_path['shares']()
+    while not check_config_path(jail, ruid) and count < 10:
         ruid = random_generator()
         count += 1
     # return ruid, create
@@ -157,10 +165,12 @@ def protect_path(path, path_type='files'):
         permitted = f()
     elif path_type.endswith('shares'):
         permitted = join_path(root_dir, path_type)
+    print(permitted)
     try:
         real_path = get_real_path(permitted, path)
         return real_path
     except IOError:
+        raise
         abort(403)
 
 
