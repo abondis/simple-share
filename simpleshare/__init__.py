@@ -11,7 +11,7 @@ from simpleshare.tools import permitted_files_path, protect_path
 from simpleshare.tools import permitted_config_path
 from simpleshare.tools import permitted_shares_path
 from simpleshare.tools import relist_parent_folder
-from simpleshare.tools import PATH_ERROR
+from simpleshare.tools import PATH_ERROR, archive_path, DEBUG
 from basicKVstore import configure, create_path, get_real_path
 from cork import Cork
 
@@ -80,7 +80,13 @@ def partials(template):
 @get('/api/shared/<user>/<uid>')
 @get('/api/shared/<user>/<uid>/<path:path>')
 def list_shared(user, uid, path='.'):
-    """Return a list of files in a shared folder"""
+    """If the path is a file: return it's content
+
+    if the path is a folder: return a list of files in the folder
+
+    if parameter 'format' is specified return the path in the
+    specified format (zip only for now)
+    """
     real_shared_path = get_path_from_uid(user, uid)
     # print(real_shared_path)
     permitted = join_path(root_dir, real_shared_path)
@@ -89,6 +95,12 @@ def list_shared(user, uid, path='.'):
     except IOError:
         abort(403, PATH_ERROR)
     # print("getting {}".format(real_path))
+    print(request.GET.keys())
+    if request.GET.get('format', 'raw').strip() == 'zip':
+        print('got zip')
+        archive = archive_path(real_path)
+        return list_dir(archive)
+
     return list_dir(real_path)
 
 
@@ -104,6 +116,11 @@ def list_path(path='.'):
         real_path = protect_path(path)
     except IOError:
         abort(403, PATH_ERROR)
+    if request.GET.get('format', 'raw').strip() == 'zip':
+        print('got zip')
+        archive = archive_path(real_path)
+        return list_dir(archive)
+
     return list_dir(real_path)
 
 
@@ -195,12 +212,16 @@ def share(path="."):
         uid, uid_path = create_random_folder()
     # create .../user/config/rel/path/UID
     print('uid {} Uid_path {}'.format(reuse or uid, uid_path))
+    print('*' * 80)
+    print((uidshares_config, rel_shared_path, reuse or uid, rel_shared_path))
+    print('*' * 80)
     configure(
+        path_config,
         rel_shared_path,
         reuse or uid,
         rel_shared_path)
     # configure .../user/shares/UID/
-    configure(uid_path, 'path', real_path, 'shares')
-    configure(uid_path, 'public', public, 'shares')
-    configure(uid_path, 'users', users, 'shares')
+    configure(uidshares_config, uid_path, 'path', real_path)
+    configure(uidshares_config, uid_path, 'public', public)
+    configure(uidshares_config, uid_path, 'users', users)
     return relist_parent_folder(real_path)
