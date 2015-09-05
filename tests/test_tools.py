@@ -1,6 +1,7 @@
 from simpleshare import tools as t
 from os import makedirs, path
 from shutil import rmtree
+from tarfile import TarFile
 from mock import patch, Mock
 
 
@@ -190,3 +191,17 @@ def test_relist_parent_folder(aaa):
     del_folder()
     assert r['dirs'][0]['name'] == 'folder'
     assert r['files'][0]['name'] == 'file'
+
+
+@patch('simpleshare.tools.aaa')
+def test_archive_shared_path(aaa):
+    """Archive a shared path and return a zip file"""
+    t.root_dir = '/tmp/test'
+    aaa.user_is_anonymous = True
+    prep_folder()
+    r = t.archive_path('/tmp/test')
+    assert r.startswith('/tmp/test')
+    assert r.endswith('.tar.gz')
+    assert path.exists(r)
+    assert path.exists(r)
+    assert TarFile.open(r).getnames() == ['test', 'test/folder', 'test/file']

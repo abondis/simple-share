@@ -8,7 +8,10 @@ from shutil import rmtree
 import string
 import random
 from bottle import abort, response, static_file
-from basicKVstore import get_config, get_real_path, check_config_path, prep_upath
+from basicKVstore import get_config, get_real_path
+from basicKVstore import check_config_path, prep_upath
+# from zipfile import ZipFile
+from shutil import make_archive
 
 aaa = Cork('cork_conf')
 root_dir = join_path(getcwd(), 'files')
@@ -189,3 +192,14 @@ def relist_parent_folder(path):
         ls['dirs'].append({'name': 'edited something'})
         ls['files'].append({'name': 'edited {}'.format(path)})
     return ls
+
+
+def archive_path(path, files=None):
+    """Archives a folder or some files in this folder"""
+    split = split_path(path)
+    chdir = join_path(*split[:-1])
+    print(chdir)
+    dest = split[-1]
+    dest_path = '/tmp/' + dest + str(random.randint(0, 200000)).zfill(6)
+    print(dest)
+    return make_archive(dest_path, 'gztar', chdir, dest)
