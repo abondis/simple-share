@@ -12,7 +12,7 @@ from simpleshare.tools import permitted_config_path
 from simpleshare.tools import permitted_shares_path
 from simpleshare.tools import relist_parent_folder
 from simpleshare.tools import PATH_ERROR
-from keyval import configure, create_path, get_real_path
+from basicKVstore import configure, create_path, get_real_path
 from cork import Cork
 
 aaa = Cork('cork_conf')

@@ -8,7 +8,7 @@ from shutil import rmtree
 import string
 import random
 from bottle import abort, response, static_file
-from keyval import get_config, get_real_path, check_config_path, prep_upath
+from basicKVstore import get_config, get_real_path, check_config_path, prep_upath
 
 aaa = Cork('cork_conf')
 root_dir = join_path(getcwd(), 'files')
