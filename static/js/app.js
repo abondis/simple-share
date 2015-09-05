@@ -183,7 +183,7 @@ angular.module('simpleShare', ['ngRoute', 'ngResource', 'ngFileUpload'])
                          var path = $scope.get_api_file_path();
                          console.log(path);
                          // $location.path('/api/files' + path).search({format: 'zip'});
-                         window.open('/api/files' + path + "?format=zip", '_blank', '');  
+                         window.open('/api/files/' + path + "?format=zip", '_blank', '');  
                      };
                      $scope.download_file = function(file) {
                          var f = '';

@@ -8,6 +8,23 @@ complexity of existing alternatives :
 - easier to install and update
 
 Of course it doesn't come with all the features other options offer.
+** Getting started
+#+BEGIN_SRC sh
+# clone the repo
+git clone https://github.com/abondis/simple-share.git
+cd simple-share
+# create a python virtualenv
+virtualenv venv
+. venv/bin/activate
+# install dependencies
+pip install -r requirements.txt
+# change passwords, add users ...
+vim prep_conf.py
+python prep_conf.py
+# install bower dependencies
+bower install
+python app.py
+#+END_SRC
 
 ** Features
 - login ;)
@@ -29,7 +46,7 @@ Ideas about what should come
 - [ ] see how to share from a cellphone
 - [ ] Share with user
 *** TODO postponed [/]
-- [ ] Deployable standalone binary
+- [ ] Deployable standalone binary/ easier install
   https://nylas.com/blog/packaging-deploying-python
 - [ ] CSRF
 - [ ] strip '/\\' from paths
@@ -39,3 +56,4 @@ Ideas about what should come
   url dans files
 - [ ] check realpath vs abspath: realpath will follow symlinks ???
 - [ ] Authentication process using the kv store
+  

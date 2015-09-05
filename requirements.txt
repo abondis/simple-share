@@ -2,3 +2,4 @@ Beaker==1.7.0
 bjoern==1.4.2
 bottle==0.12.8
 bottle-cork==0.11.1
+-e git+https://github.com/abondis/basicKVstore.git@62e55cebeed4e976f5a9cfbe43f29bb7eb286975#egg=BasicKVStore-master
