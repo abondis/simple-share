@@ -1,0 +1,43 @@
+* Changelog
+** DONE v0.0.3 [5/5]
+CLOSED: [2015-09-04 Fri 23:11]
+- [X] tests
+- [X] split hash-k-v part from app
+- [X] UI: button to download files in zip
+- [X] UI: api call to download files in zip
+- [X] API: download files as zip
+** DONE v0.0.2
+- [X] UI: share URL use '/get/shared...' when it's a file and
+  '/shared/...' else.  figure out how to not have two different
+- [X] API: list all shared path for all files and folder listed in list_dir
+- [X] API: get files size and date
+- [X] API: sharing should refresh the listing
+- [X] remove share
+- [X] bug: Configuration conflicts between hash and keys
+- [X] copy shared URL
+  partial fix: hover shows the link, it's still needed to select the link and copy/paste
+- [X] UI: Basic style
+  - [X] buttons
+  - [X] links
+- [X] redo the key value store
+  solution: path + #/, key + K
+- [X] fix name collision issues
+  - ie: create/share/delete/create with the same UID/name
+  - move sharing config to another config folder
+** DONE v0.0.1
+- [X] Api to handle files
+- [X] Share with UUID
+- [X] configure using folders
+- [X] UI: browse up and down in folder
+- [X] UI: create a folder
+- [X] UI: upload a file
+- [X] UI: upload multiple files
+- [X] UI: upload progress per files
+- [X] UI: delete file
+- [X] API: get file content
+- [X] API: delete files/folder
+- [X] UI: display file content
+- [X] UI: share a file
+- [X] UI: list shared files .../user/uid/.../.../....
+- [X] Session
+- [X] Auth

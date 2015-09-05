@@ -1,0 +1,41 @@
+* Simple share
+
+Small bottle app to share files and folders, without all the
+complexity of existing alternatives :
+- no database to setup
+- no webserver to setup
+- no syncing
+- easier to install and update
+
+Of course it doesn't come with all the features other options offer.
+
+** Features
+- login ;)
+- basic files manipulations (create folders, upload files, delete)
+- sharing URL with generated unique ID
+- download folder as a zip
+
+** Roadmap
+Ideas about what should come
+*** TODO v0.0.4 [0/5]
+- [ ] Preview
+- [ ] Use folders for login/password/config sessions
+- [ ] FIX UI: shared listing, make sure we don't see .. when we are at the root folder
+- [X] UI: select files to download cf tag 'ui-multi-select'
+- [ ] API: select files to download
+- [ ] Config file
+- [ ] edit share properties
+*** TODO v0.0.5 [/]
+- [ ] see how to share from a cellphone
+- [ ] Share with user
+*** TODO postponed [/]
+- [ ] Deployable standalone binary
+  https://nylas.com/blog/packaging-deploying-python
+- [ ] CSRF
+- [ ] strip '/\\' from paths
+- [ ] UI: sharing URL. figure out how to not have two different urls. For
+  now if we do /shared/... to get a file's content, angular tries to
+  map it to the $scope.files peut être simplement ?download pour les
+  url dans files
+- [ ] check realpath vs abspath: realpath will follow symlinks ???
+- [ ] Authentication process using the kv store
