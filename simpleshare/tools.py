@@ -202,4 +202,4 @@ def archive_path(path, files=None):
     dest = split[-1]
     dest_path = '/tmp/' + dest + str(random.randint(0, 200000)).zfill(6)
     print(dest)
-    return make_archive(dest_path, 'gztar', chdir, dest)
+    return make_archive(dest_path, 'zip', chdir, dest)
